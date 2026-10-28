@@ -5,17 +5,17 @@ import { falha, sucesso, type Resultado } from "../../domain/resultado.js";
 import type { TicketId, TipoChamado } from "../../domain/ticket-id.js";
 import type { UserId } from "../../domain/user-id.js";
 import type { ErroDeConsulta, TicketClient } from "../ticket-client.js";
-import { chamados, complementos, numeroDeIncidente, numeroDeRequisicao } from "./esquema.js";
+import { chamados, complementos, SEQUENCIA_POR_TIPO } from "./esquema.js";
 
 export type Banco = PgDatabase<PgQueryResultHKT>;
 
 type LinhaDoChamado = typeof chamados.$inferSelect;
 type LinhaDoComplemento = typeof complementos.$inferSelect;
 
-const NUMERACAO_POR_TIPO = {
-  incidente: { prefixo: "INC", sequencia: numeroDeIncidente },
-  requisicao: { prefixo: "REQ", sequencia: numeroDeRequisicao },
-} as const satisfies Record<TipoChamado, unknown>;
+const PREFIXO_POR_TIPO = {
+  incidente: "INC",
+  requisicao: "REQ",
+} as const satisfies Record<TipoChamado, string>;
 
 export function ticketClientPostgres(db: Banco): TicketClient {
   const comComplementos = async (linhas: readonly LinhaDoChamado[]): Promise<Chamado[]> => {
@@ -71,11 +71,11 @@ export function ticketClientPostgres(db: Banco): TicketClient {
 
     criar: async (rascunho, agora) => {
       const { dados } = rascunho.conteudo;
-      const { prefixo, sequencia } = NUMERACAO_POR_TIPO[dados.tipo];
+
       await db
         .insert(chamados)
         .values({
-          id: sql<TicketId>`${prefixo} || '-' || nextval(${sequencia.seqName})`,
+          id: sql<TicketId>`${PREFIXO_POR_TIPO[dados.tipo]} || '-' || nextval(${SEQUENCIA_POR_TIPO[dados.tipo]})`,
           dono: rascunho.dono,
           ...dados,
           status: "aberto",

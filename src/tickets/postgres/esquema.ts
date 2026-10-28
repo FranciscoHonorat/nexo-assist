@@ -42,8 +42,13 @@ export const afetados = pgEnum("afetados", [
 
 const NUMERACAO = { startWith: 30000, maxValue: 999_999_999 };
 
-export const numeroDeIncidente = pgSequence("numero_de_incidente", NUMERACAO);
-export const numeroDeRequisicao = pgSequence("numero_de_requisicao", NUMERACAO);
+export const SEQUENCIA_POR_TIPO = {
+  incidente: "numero_de_incidente",
+  requisicao: "numero_de_requisicao",
+} as const satisfies Record<TipoChamado, string>;
+
+export const numeroDeIncidente = pgSequence(SEQUENCIA_POR_TIPO.incidente, NUMERACAO);
+export const numeroDeRequisicao = pgSequence(SEQUENCIA_POR_TIPO.requisicao, NUMERACAO);
 
 const instante = (nome: string) => timestamp(nome, { withTimezone: true, mode: "date" }).notNull();
 
