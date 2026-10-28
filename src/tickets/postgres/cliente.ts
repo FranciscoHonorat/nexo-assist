@@ -5,6 +5,7 @@ import { falha, sucesso, type Resultado } from "../../domain/resultado.js";
 import type { TicketId, TipoChamado } from "../../domain/ticket-id.js";
 import type { UserId } from "../../domain/user-id.js";
 import {
+  envolverOperacoes,
   INDISPONIVEL,
   type ErroDeConsulta,
   type ErroDeInfraestrutura,
@@ -126,7 +127,7 @@ export function ticketClientPostgres(db: Banco): TicketClient {
     alterarStatus: tentarAlterarStatus,
   };
 
-  return protegerContraQuedas(operacoes);
+  return envolverOperacoes(operacoes, protegido);
 }
 
 function paraChamado(linha: LinhaDoChamado, extras: readonly LinhaDoComplemento[]): Chamado {
@@ -143,18 +144,7 @@ function paraChamado(linha: LinhaDoChamado, extras: readonly LinhaDoComplemento[
   });
 }
 
-function protegerContraQuedas(cliente: TicketClient): TicketClient {
-  return {
-    listar: (dono) => protegido(() => cliente.listar(dono)),
-    obter: (id, por) => protegido(() => cliente.obter(id, por)),
-    criar: (rascunho, agora) => protegido(() => cliente.criar(rascunho, agora)),
-    complementar: (rascunho, agora) => protegido(() => cliente.complementar(rascunho, agora)),
-    alterarStatus: (id, alteracao, agora) =>
-      protegido(() => cliente.alterarStatus(id, alteracao, agora)),
-  };
-}
-
-async function protegido<T, E>(
+async function protegido<T, E extends { readonly motivo: string }>(
   executar: () => Promise<Resultado<T, E>>,
 ): Promise<Resultado<T, E | ErroDeInfraestrutura>> {
   try {

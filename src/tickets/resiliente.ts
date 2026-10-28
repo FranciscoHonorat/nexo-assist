@@ -1,5 +1,5 @@
 import type { Resultado } from "../domain/resultado.js";
-import { ehIndisponivel, type TicketClient } from "./ticket-client.js";
+import { ehIndisponivel, envolverOperacoes, type TicketClient } from "./ticket-client.js";
 
 export type PoliticaDeRetry = {
   readonly tentativas: number;
@@ -38,13 +38,7 @@ export function ticketClientResiliente(
     return tentar(executar, tentativa + 1);
   };
 
-  return {
-    listar: (dono) => tentar(() => base.listar(dono)),
-    obter: (id, por) => tentar(() => base.obter(id, por)),
-    criar: (rascunho, agora) => tentar(() => base.criar(rascunho, agora)),
-    complementar: (rascunho, agora) => tentar(() => base.complementar(rascunho, agora)),
-    alterarStatus: (id, alteracao, agora) => tentar(() => base.alterarStatus(id, alteracao, agora)),
-  };
+  return envolverOperacoes(base, (executar) => tentar(executar));
 }
 
 function esperaComJitter(

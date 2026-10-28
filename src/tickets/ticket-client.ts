@@ -48,3 +48,18 @@ export type TicketClient = {
     agora: Date,
   ) => Resposta<Chamado, ErroDeAlteracaoDeStatus>;
 };
+
+export type Envoltorio = <T, E extends { readonly motivo: string }>(
+  executar: () => Promise<Resultado<T, E>>,
+) => Promise<Resultado<T, E | ErroDeInfraestrutura>>;
+
+export function envolverOperacoes(cliente: TicketClient, envolver: Envoltorio): TicketClient {
+  return {
+    listar: (dono) => envolver(() => cliente.listar(dono)),
+    obter: (id, por) => envolver(() => cliente.obter(id, por)),
+    criar: (rascunho, agora) => envolver(() => cliente.criar(rascunho, agora)),
+    complementar: (rascunho, agora) => envolver(() => cliente.complementar(rascunho, agora)),
+    alterarStatus: (id, alteracao, agora) =>
+      envolver(() => cliente.alterarStatus(id, alteracao, agora)),
+  };
+}
