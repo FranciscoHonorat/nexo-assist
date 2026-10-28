@@ -18,6 +18,11 @@ export type DadosDoChamado = {
 
 export type StatusDoChamado = "aberto" | "aguardando_analista" | "aprovado" | "resolvido";
 
+export type ComplementoDoChamado = {
+  readonly texto: string;
+  readonly em: Date;
+};
+
 export type Chamado = {
   readonly id: TicketId;
   readonly dono: UserId;
@@ -25,6 +30,7 @@ export type Chamado = {
   readonly status: StatusDoChamado;
   readonly criadoEm: Date;
   readonly atualizadoEm: Date;
+  readonly complementos: readonly ComplementoDoChamado[];
 };
 
 const CAMPOS_OBRIGATORIOS_DE_TEXTO = ["titulo", "descricao"] as const;

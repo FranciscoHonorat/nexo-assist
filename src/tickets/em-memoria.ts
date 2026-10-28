@@ -1,8 +1,9 @@
 import type { Chamado } from "../domain/chamado.js";
 import type { RascunhoId } from "../domain/rascunho-id.js";
-import { falha, sucesso } from "../domain/resultado.js";
+import type { Complemento, Rascunho } from "../domain/rascunho.js";
+import { falha, sucesso, type Resultado } from "../domain/resultado.js";
 import { lerTicketId, type TicketId, type TipoChamado } from "../domain/ticket-id.js";
-import type { EstadoInicial, TicketClient } from "./ticket-client.js";
+import type { ErroDeComplementacao, EstadoInicial, TicketClient } from "./ticket-client.js";
 
 const PREFIXO_POR_TIPO = {
   incidente: "INC",
@@ -10,10 +11,13 @@ const PREFIXO_POR_TIPO = {
 } as const satisfies Record<TipoChamado, string>;
 
 const PRIMEIRO_NUMERO = 30000;
+const DIA = 24 * 60 * 60 * 1000;
+const PRAZO_DE_REABERTURA = 7 * DIA;
 
 export function ticketClientEmMemoria({ chamados }: EstadoInicial): TicketClient {
   const porId = new Map(chamados.map((chamado) => [chamado.id, chamado]));
   const criadosPorRascunho = new Map<RascunhoId, Chamado>();
+  const complementadosPorRascunho = new Map<RascunhoId, Resultado<Chamado, ErroDeComplementacao>>();
   let proximoNumero = PRIMEIRO_NUMERO;
 
   const proximoId = (tipo: TipoChamado): TicketId => {
@@ -42,12 +46,45 @@ export function ticketClientEmMemoria({ chamados }: EstadoInicial): TicketClient
         status: "aberto",
         criadoEm: agora,
         atualizadoEm: agora,
+        complementos: [],
       });
       porId.set(chamado.id, chamado);
       criadosPorRascunho.set(rascunho.id, chamado);
       return Promise.resolve(chamado);
     },
+
+    complementar: (rascunho, agora) => {
+      const jaAplicado = complementadosPorRascunho.get(rascunho.id);
+      if (jaAplicado) return Promise.resolve(jaAplicado);
+      const resultado = aplicarComplemento(porId.get(rascunho.conteudo.chamado), rascunho, agora);
+      if (resultado.ok) porId.set(resultado.valor.id, resultado.valor);
+      complementadosPorRascunho.set(rascunho.id, resultado);
+      return Promise.resolve(resultado);
+    },
   };
+}
+
+function aplicarComplemento(
+  chamado: Chamado | undefined,
+  rascunho: Rascunho<"confirmado", Complemento>,
+  agora: Date,
+): Resultado<Chamado, ErroDeComplementacao> {
+  const id = rascunho.conteudo.chamado;
+  if (chamado?.dono !== rascunho.dono) return falha({ motivo: "nao_encontrado", id });
+  const resolvidoHa = agora.getTime() - chamado.atualizadoEm.getTime();
+  if (chamado.status === "resolvido" && resolvidoHa > PRAZO_DE_REABERTURA)
+    return falha({ motivo: "resolvido_ha_mais_de_7_dias", id });
+  return sucesso(
+    Object.freeze({
+      ...chamado,
+      status: chamado.status === "resolvido" ? "aberto" : chamado.status,
+      atualizadoEm: agora,
+      complementos: Object.freeze([
+        ...chamado.complementos,
+        Object.freeze({ texto: rascunho.conteudo.texto, em: agora }),
+      ]),
+    }),
+  );
 }
 
 function montarId(tipo: TipoChamado, numero: number): TicketId {

@@ -1,5 +1,12 @@
 import { describe, expectTypeOf, it } from "vitest";
-import type { Afetados, Categoria, Chamado, DadosDoChamado, StatusDoChamado } from "./chamado.js";
+import type {
+  Afetados,
+  Categoria,
+  Chamado,
+  ComplementoDoChamado,
+  DadosDoChamado,
+  StatusDoChamado,
+} from "./chamado.js";
 import type { Prioridade } from "./prazo.js";
 import type { TicketId, TipoChamado } from "./ticket-id.js";
 import type { UserId } from "./user-id.js";
@@ -42,6 +49,14 @@ describe("Chamado: o que existe no serviço de chamados", () => {
       readonly status: StatusDoChamado;
       readonly criadoEm: Date;
       readonly atualizadoEm: Date;
+      readonly complementos: readonly ComplementoDoChamado[];
+    }>();
+  });
+
+  it("um complemento registra o texto e quando foi acrescentado", () => {
+    expectTypeOf<ComplementoDoChamado>().toEqualTypeOf<{
+      readonly texto: string;
+      readonly em: Date;
     }>();
   });
 });
