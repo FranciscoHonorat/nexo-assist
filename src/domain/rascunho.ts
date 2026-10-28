@@ -1,3 +1,4 @@
+import type { DadosDoChamado } from "./chamado.js";
 import type { RascunhoId } from "./rascunho-id.js";
 import { falha, sucesso, type Resultado } from "./resultado.js";
 import type { UserId } from "./user-id.js";
@@ -7,6 +8,7 @@ declare const confirmadoPeloFuncionario: unique symbol;
 type CamposComuns = {
   readonly id: RascunhoId;
   readonly dono: UserId;
+  readonly dados: DadosDoChamado;
   readonly criadoEm: Date;
 };
 
@@ -35,6 +37,11 @@ export type ErroDeTransicao = {
   readonly tentouPor: UserId;
 };
 
+export type ErroDeConteudo = {
+  readonly motivo: "campo_vazio";
+  readonly campo: "titulo" | "descricao";
+};
+
 type Autoria = {
   readonly por: UserId;
   readonly agora: Date;
@@ -43,11 +50,29 @@ type Autoria = {
 type NovoRascunho = {
   readonly id: RascunhoId;
   readonly dono: UserId;
+  readonly dados: DadosDoChamado;
   readonly agora: Date;
 };
 
-export function criarRascunho({ id, dono, agora }: NovoRascunho): Rascunho<"pendente"> {
-  return Object.freeze({ id, dono, status: "pendente", criadoEm: agora });
+export function criarRascunho({
+  id,
+  dono,
+  dados,
+  agora,
+}: NovoRascunho): Resultado<Rascunho<"pendente">, ErroDeConteudo> {
+  const titulo = dados.titulo.trim();
+  const descricao = dados.descricao.trim();
+  if (titulo === "") return falha({ motivo: "campo_vazio", campo: "titulo" });
+  if (descricao === "") return falha({ motivo: "campo_vazio", campo: "descricao" });
+  return sucesso(
+    Object.freeze({
+      id,
+      dono,
+      dados: Object.freeze({ ...dados, titulo, descricao }),
+      status: "pendente",
+      criadoEm: agora,
+    }),
+  );
 }
 
 export function confirmar(
