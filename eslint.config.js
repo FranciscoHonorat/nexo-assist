@@ -1,6 +1,7 @@
 import js from "@eslint/js";
 import { defineConfig } from "eslint/config";
 import tseslint from "typescript-eslint";
+import { fronteiras } from "./src/arquitetura/fronteiras.ts";
 
 export default defineConfig(
   { ignores: ["coverage/", "node_modules/"] },
@@ -31,4 +32,5 @@ export default defineConfig(
       "@typescript-eslint/ban-ts-comment": ["error", { "ts-expect-error": false }],
     },
   },
+  ...fronteiras,
 );
