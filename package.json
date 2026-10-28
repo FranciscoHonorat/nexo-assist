@@ -15,7 +15,8 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
+    "test:coverage": "node --env-file-if-exists=.env ./node_modules/vitest/vitest.mjs run --coverage",
+    "test:integracao": "node --env-file-if-exists=.env ./node_modules/vitest/vitest.mjs run src/tickets/postgres",
     "check": "npm run typecheck && npm run lint && npm run format:check && npm run test:coverage"
   },
   "devDependencies": {
