@@ -69,6 +69,6 @@ Por ser nosso, o serviço também concentra duas regras: a **checagem de dono** 
 2. [x] Escrever a suíte de contrato.
 3. [x] Implementar a versão simulada (listar, obter e criar).
 4. [x] Complementar chamado ([ADR-0012](0012-complemento-e-reabertura-de-chamados.md)).
-5. [ ] Alterar status com transição condicional.
+5. [x] Alterar status com transição condicional ([ADR-0013](0013-transicoes-de-status-do-chamado.md)).
 6. [ ] Falhas injetáveis na versão simulada.
 7. [ ] Adicionar a regra de import no ESLint.
