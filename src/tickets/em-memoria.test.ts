@@ -87,6 +87,9 @@ describe("TicketClient em memória: legado fora do ar", () => {
       const rascunho = complementoConfirmadoDaAna(RASCUNHO_1, incidenteDaAna.id, "mais detalhes");
 
       expect(await servico.complementar(rascunho, t1)).toEqual(INDISPONIVEL);
+      expect(valorDe(await servico.obter(incidenteDaAna.id, ana)).complementos).toEqual([
+        { texto: "mais detalhes", em: t1 },
+      ]);
 
       const novaTentativa = valorDe(await servico.complementar(rascunho, t1));
       expect(novaTentativa.complementos).toEqual([{ texto: "mais detalhes", em: t1 }]);
@@ -97,6 +100,9 @@ describe("TicketClient em memória: legado fora do ar", () => {
       const alteracao = { de: "aberto", para: "aguardando_analista", por: ana } as const;
 
       expect(await servico.alterarStatus(incidenteDaAna.id, alteracao, t1)).toEqual(INDISPONIVEL);
+      expect(valorDe(await servico.obter(incidenteDaAna.id, ana)).status).toBe(
+        "aguardando_analista",
+      );
 
       expect(await servico.alterarStatus(incidenteDaAna.id, alteracao, t1)).toMatchObject({
         ok: true,

@@ -1,5 +1,6 @@
 import { alterarStatusDoChamado, complementarChamado, type Chamado } from "../domain/chamado.js";
 import type { RascunhoId } from "../domain/rascunho-id.js";
+import type { Complemento, NovoChamado, Rascunho } from "../domain/rascunho.js";
 import { encadear, falha, sucesso, type Resultado } from "../domain/resultado.js";
 import { lerTicketId, type TicketId, type TipoChamado } from "../domain/ticket-id.js";
 import type { UserId } from "../domain/user-id.js";
@@ -58,6 +59,39 @@ export function ticketClientEmMemoria(
     return Promise.resolve(falhaSimulada === "depois" ? INDISPONIVEL : resultado);
   };
 
+  const criarUmaVez = (rascunho: Rascunho<"confirmado", NovoChamado>, agora: Date): Chamado => {
+    const jaCriado = criadosPorRascunho.get(rascunho.id);
+    if (jaCriado) return jaCriado;
+    const chamado: Chamado = Object.freeze({
+      id: proximoId(rascunho.conteudo.dados.tipo),
+      dono: rascunho.dono,
+      dados: rascunho.conteudo.dados,
+      status: "aberto",
+      criadoEm: agora,
+      atualizadoEm: agora,
+      complementos: [],
+    });
+    porId.set(chamado.id, chamado);
+    criadosPorRascunho.set(rascunho.id, chamado);
+    return chamado;
+  };
+
+  const complementarUmaVez = (
+    rascunho: Rascunho<"confirmado", Complemento>,
+    agora: Date,
+  ): Resultado<Chamado, ErroDeComplementacao> => {
+    const jaAplicado = complementadosPorRascunho.get(rascunho.id);
+    if (jaAplicado) return jaAplicado;
+    const { chamado, texto } = rascunho.conteudo;
+    const resultado = gravar(
+      encadear(doDono(chamado, rascunho.dono), (atual) =>
+        complementarChamado(atual, { texto, agora }),
+      ),
+    );
+    complementadosPorRascunho.set(rascunho.id, resultado);
+    return resultado;
+  };
+
   const gravar = <E>(resultado: Resultado<Chamado, E>): Resultado<Chamado, E> => {
     if (resultado.ok) porId.set(resultado.valor.id, resultado.valor);
     return resultado;
@@ -71,37 +105,10 @@ export function ticketClientEmMemoria(
 
     obter: (id, por) => responder("obter", () => doDono(id, por)),
 
-    criar: (rascunho, agora) =>
-      responder("criar", () => {
-        const jaCriado = criadosPorRascunho.get(rascunho.id);
-        if (jaCriado) return sucesso(jaCriado);
-        const chamado: Chamado = Object.freeze({
-          id: proximoId(rascunho.conteudo.dados.tipo),
-          dono: rascunho.dono,
-          dados: rascunho.conteudo.dados,
-          status: "aberto",
-          criadoEm: agora,
-          atualizadoEm: agora,
-          complementos: [],
-        });
-        porId.set(chamado.id, chamado);
-        criadosPorRascunho.set(rascunho.id, chamado);
-        return sucesso(chamado);
-      }),
+    criar: (rascunho, agora) => responder("criar", () => sucesso(criarUmaVez(rascunho, agora))),
 
     complementar: (rascunho, agora) =>
-      responder("complementar", () => {
-        const jaAplicado = complementadosPorRascunho.get(rascunho.id);
-        if (jaAplicado) return jaAplicado;
-        const { chamado, texto } = rascunho.conteudo;
-        const resultado = gravar(
-          encadear(doDono(chamado, rascunho.dono), (atual) =>
-            complementarChamado(atual, { texto, agora }),
-          ),
-        );
-        complementadosPorRascunho.set(rascunho.id, resultado);
-        return resultado;
-      }),
+      responder("complementar", () => complementarUmaVez(rascunho, agora)),
 
     alterarStatus: (id, alteracao, agora) =>
       responder("alterarStatus", () =>
