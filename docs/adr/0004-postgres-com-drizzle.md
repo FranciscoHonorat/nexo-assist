@@ -82,21 +82,30 @@ dialeto (`pgTable` e `sqliteTable`), então trocar de banco depois não sai de g
 
 - Mais fácil: testes com o banco real; escala futura.
 - Mais difícil: setup local, que depende de Docker.
-- **O PGlite tem uma conexão só**, então não reproduz duas transações ao mesmo tempo. Os caminhos
-  de concorrência (o `UPDATE` condicional que afeta 0 linhas) precisam de um PostgreSQL real para
-  serem testados.
-- **Bug de concorrência conhecido:** em `complementar`, a checagem de "complemento já aplicado"
-  acontece fora da transação. Duas tentativas simultâneas do mesmo rascunho podem fazer a segunda
-  esbarrar no `UNIQUE` e lançar um erro, em vez de devolver o resultado idempotente.
+- **O PGlite tem uma conexão só**, então não reproduz duas transações ao mesmo tempo. Por isso
+  existe uma segunda bateria, `postgres-real.test.ts`, que roda o contrato e três corridas (cada
+  uma repetida 20 vezes) contra um PostgreSQL 18.6 de verdade:
+  - localmente, com `docker compose up` e o `.env` criado a partir do `.env.example`;
+  - no CI, com um serviço PostgreSQL no GitHub Actions, em todo push.
+- **A esteira local exige o banco no ar.** Só o banco real exercita os caminhos de concorrência:
+  sem ele, a cobertura de branches cai de 97,93% para 94,84%, abaixo do mínimo. Em vez de baixar o
+  mínimo, o `npm run check` lê o `.env` e roda igual ao CI. O pre-commit roda só o `npm test`, que
+  pula os testes de integração quando não há `TEST_DATABASE_URL`, então o commit continua rápido e
+  não depende do Docker.
+- **Bug de concorrência encontrado e corrigido:** em `complementar`, a checagem de "complemento já
+  aplicado" acontecia fora da transação, e duas tentativas simultâneas do mesmo rascunho faziam a
+  segunda esbarrar no `UNIQUE` e lançar um erro. Um teste com PostgreSQL real reproduziu o erro
+  (código 23505) antes da correção. Agora o `INSERT` usa `ON CONFLICT DO NOTHING` dentro da
+  transação, e quem perde a corrida devolve o estado atual do chamado.
 - **Vulnerabilidades:** o `npm audit` aponta 4 moderadas, todas vindas do `drizzle-kit` (uma
   versão antiga do `esbuild`, cujo problema é o servidor de desenvolvimento). O `drizzle-kit` é
   só uma ferramenta de desenvolvimento, e as dependências de produção têm 0 vulnerabilidades.
 
 ## Itens de ação
 
-1. [ ] `docker-compose.yml` com PostgreSQL.
+1. [x] `docker-compose.yml` com PostgreSQL.
 2. [x] Schema e primeira migration.
 3. [x] Fixture de teste com PGlite.
 4. [ ] Indisponibilidade do banco vira `indisponivel`.
-5. [ ] Testes de concorrência com PostgreSQL real, e a correção do `complementar`.
+5. [x] Testes de concorrência com PostgreSQL real, e a correção do `complementar`.
 6. [ ] Aplicar as migrations na inicialização em produção.
