@@ -2,13 +2,8 @@ import { describe, expect, it } from "vitest";
 import type { DadosDoChamado } from "./chamado.js";
 import { lerRascunhoId } from "./rascunho-id.js";
 import { confirmar, criarRascunho, descartar } from "./rascunho.js";
-import type { Resultado } from "./resultado.js";
+import { valorDe } from "../testes/valor-de.js";
 import { lerUserId } from "./user-id.js";
-
-function valorDe<T>(resultado: Resultado<T, unknown>): T {
-  if (!resultado.ok) throw new Error("fixture inválida");
-  return resultado.valor;
-}
 
 const id = valorDe(lerRascunhoId("rsc_0f8fad5b-d9cb-469f-a165-70867728950e"));
 const ana = valorDe(lerUserId("ana@nexo.com"));

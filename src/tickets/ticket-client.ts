@@ -9,6 +9,10 @@ export type ErroDeConsulta = {
   readonly id: TicketId;
 };
 
+export type EstadoInicial = {
+  readonly chamados: readonly Chamado[];
+};
+
 export type TicketClient = {
   readonly listar: (dono: UserId) => Promise<readonly Chamado[]>;
   readonly obter: (id: TicketId, por: UserId) => Promise<Resultado<Chamado, ErroDeConsulta>>;

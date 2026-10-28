@@ -8,13 +8,8 @@ import {
   type Conversa,
   type Controle,
 } from "./conversa.js";
-import type { Resultado } from "./resultado.js";
+import { valorDe } from "../testes/valor-de.js";
 import { lerUserId } from "./user-id.js";
-
-function valorDe<T>(resultado: Resultado<T, unknown>): T {
-  if (!resultado.ok) throw new Error("fixture inválida");
-  return resultado.valor;
-}
 
 const ana = valorDe(lerUserId("ana@nexo.com"));
 const bruno = valorDe(lerUserId("bruno.n1@nexo.com"));

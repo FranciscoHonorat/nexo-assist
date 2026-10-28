@@ -2,19 +2,10 @@ import { describe, expect, it } from "vitest";
 import type { Chamado, DadosDoChamado } from "../domain/chamado.js";
 import { lerRascunhoId } from "../domain/rascunho-id.js";
 import { confirmar, criarRascunho } from "../domain/rascunho.js";
-import type { Resultado } from "../domain/resultado.js";
+import { valorDe } from "../testes/valor-de.js";
 import { lerTicketId, tipoDoChamado } from "../domain/ticket-id.js";
 import { lerUserId, type UserId } from "../domain/user-id.js";
-import type { TicketClient } from "./ticket-client.js";
-
-export type EstadoInicial = {
-  readonly chamados: readonly Chamado[];
-};
-
-function valorDe<T>(resultado: Resultado<T, unknown>): T {
-  if (!resultado.ok) throw new Error("fixture inválida");
-  return resultado.valor;
-}
+import type { EstadoInicial, TicketClient } from "./ticket-client.js";
 
 const ana = valorDe(lerUserId("ana@nexo.com"));
 const joao = valorDe(lerUserId("joao@nexo.com"));

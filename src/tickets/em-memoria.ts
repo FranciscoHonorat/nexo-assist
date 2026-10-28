@@ -2,11 +2,7 @@ import type { Chamado } from "../domain/chamado.js";
 import type { RascunhoId } from "../domain/rascunho-id.js";
 import { falha, sucesso } from "../domain/resultado.js";
 import { lerTicketId, type TicketId, type TipoChamado } from "../domain/ticket-id.js";
-import type { TicketClient } from "./ticket-client.js";
-
-type EstadoDoServico = {
-  readonly chamados: readonly Chamado[];
-};
+import type { EstadoInicial, TicketClient } from "./ticket-client.js";
 
 const PREFIXO_POR_TIPO = {
   incidente: "INC",
@@ -15,10 +11,16 @@ const PREFIXO_POR_TIPO = {
 
 const PRIMEIRO_NUMERO = 30000;
 
-export function ticketClientEmMemoria({ chamados }: EstadoDoServico): TicketClient {
+export function ticketClientEmMemoria({ chamados }: EstadoInicial): TicketClient {
   const porId = new Map(chamados.map((chamado) => [chamado.id, chamado]));
   const criadosPorRascunho = new Map<RascunhoId, Chamado>();
   let proximoNumero = PRIMEIRO_NUMERO;
+
+  const proximoId = (tipo: TipoChamado): TicketId => {
+    const id = montarId(tipo, proximoNumero);
+    proximoNumero += 1;
+    return id;
+  };
 
   return {
     listar: (dono) =>
@@ -34,7 +36,7 @@ export function ticketClientEmMemoria({ chamados }: EstadoDoServico): TicketClie
       const jaCriado = criadosPorRascunho.get(rascunho.id);
       if (jaCriado) return Promise.resolve(jaCriado);
       const chamado: Chamado = Object.freeze({
-        id: montarId(rascunho.dados.tipo, proximoNumero++),
+        id: proximoId(rascunho.dados.tipo),
         dono: rascunho.dono,
         dados: rascunho.dados,
         status: "aberto",
