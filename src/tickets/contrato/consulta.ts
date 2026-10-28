@@ -15,14 +15,14 @@ export function cenariosDeConsulta(fabricar: Fabrica): void {
 
   describe("listar", () => {
     it("devolve só os chamados do dono", async () => {
-      const chamados = await comChamados().listar(ana);
+      const chamados = valorDe(await comChamados().listar(ana));
 
       expect(chamados).toHaveLength(2);
       expect(chamados).toEqual(expect.arrayContaining([incidenteDaAna, requisicaoDaAna]));
     });
 
     it("devolve lista vazia para quem não tem chamados", async () => {
-      expect(await fabricar({ chamados: [] }).listar(ana)).toEqual([]);
+      expect(valorDe(await fabricar({ chamados: [] }).listar(ana))).toEqual([]);
     });
   });
 

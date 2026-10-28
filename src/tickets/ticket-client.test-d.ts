@@ -8,6 +8,7 @@ import type {
   ErroDeAlteracaoDeStatus,
   ErroDeComplementacao,
   ErroDeConsulta,
+  ErroDeInfraestrutura,
   TicketClient,
 } from "./ticket-client.js";
 
@@ -21,14 +22,22 @@ declare const novoChamado: Rascunho<"confirmado", NovoChamado>;
 declare const complementoPendente: Rascunho<"pendente", Complemento>;
 
 describe("TicketClient: garantias em tempo de compilação", () => {
-  it("toda operação é assíncrona, como num sistema legado", () => {
-    expectTypeOf(servico.listar).returns.toEqualTypeOf<Promise<readonly Chamado[]>>();
-    expectTypeOf(servico.obter).returns.toEqualTypeOf<
-      Promise<Resultado<Chamado, ErroDeConsulta>>
+  it("toda operação é assíncrona e pode encontrar o legado fora do ar", () => {
+    expectTypeOf<ErroDeInfraestrutura>().toEqualTypeOf<{ readonly motivo: "indisponivel" }>();
+    expectTypeOf(servico.listar).returns.toEqualTypeOf<
+      Promise<Resultado<readonly Chamado[], ErroDeInfraestrutura>>
     >();
-    expectTypeOf(servico.criar).returns.toEqualTypeOf<Promise<Chamado>>();
+    expectTypeOf(servico.obter).returns.toEqualTypeOf<
+      Promise<Resultado<Chamado, ErroDeConsulta | ErroDeInfraestrutura>>
+    >();
+    expectTypeOf(servico.criar).returns.toEqualTypeOf<
+      Promise<Resultado<Chamado, ErroDeInfraestrutura>>
+    >();
     expectTypeOf(servico.complementar).returns.toEqualTypeOf<
-      Promise<Resultado<Chamado, ErroDeComplementacao>>
+      Promise<Resultado<Chamado, ErroDeComplementacao | ErroDeInfraestrutura>>
+    >();
+    expectTypeOf(servico.alterarStatus).returns.toEqualTypeOf<
+      Promise<Resultado<Chamado, ErroDeAlteracaoDeStatus | ErroDeInfraestrutura>>
     >();
   });
 
@@ -63,9 +72,6 @@ describe("TicketClient: garantias em tempo de compilação", () => {
   });
 
   it("alterarStatus é condicional e pode falhar por privacidade ou por conflito", () => {
-    expectTypeOf(servico.alterarStatus).returns.toEqualTypeOf<
-      Promise<Resultado<Chamado, ErroDeAlteracaoDeStatus>>
-    >();
     expectTypeOf<ErroDeAlteracaoDeStatus>().toEqualTypeOf<
       | ErroDeConsulta
       | {

@@ -22,17 +22,23 @@ export type EstadoInicial = {
   readonly chamados: readonly Chamado[];
 };
 
+export type ErroDeInfraestrutura = {
+  readonly motivo: "indisponivel";
+};
+
+type Resposta<T, E = never> = Promise<Resultado<T, E | ErroDeInfraestrutura>>;
+
 export type TicketClient = {
-  readonly listar: (dono: UserId) => Promise<readonly Chamado[]>;
-  readonly obter: (id: TicketId, por: UserId) => Promise<Resultado<Chamado, ErroDeConsulta>>;
-  readonly criar: (rascunho: Rascunho<"confirmado", NovoChamado>, agora: Date) => Promise<Chamado>;
+  readonly listar: (dono: UserId) => Resposta<readonly Chamado[]>;
+  readonly obter: (id: TicketId, por: UserId) => Resposta<Chamado, ErroDeConsulta>;
+  readonly criar: (rascunho: Rascunho<"confirmado", NovoChamado>, agora: Date) => Resposta<Chamado>;
   readonly complementar: (
     rascunho: Rascunho<"confirmado", Complemento>,
     agora: Date,
-  ) => Promise<Resultado<Chamado, ErroDeComplementacao>>;
+  ) => Resposta<Chamado, ErroDeComplementacao>;
   readonly alterarStatus: (
     id: TicketId,
     alteracao: TransicaoDeStatus & { readonly por: UserId },
     agora: Date,
-  ) => Promise<Resultado<Chamado, ErroDeAlteracaoDeStatus>>;
+  ) => Resposta<Chamado, ErroDeAlteracaoDeStatus>;
 };
