@@ -101,16 +101,20 @@ export function ticketClientPostgres(db: Banco): TicketClient {
       if (jaAplicado.length > 0) return atual;
       const decisao = complementarChamado(atual.valor, { texto, agora });
       if (!decisao.ok) return decisao;
-      await db.transaction(async (tx) => {
-        await tx
+      const aplicadoAgora = await db.transaction(async (tx) => {
+        const inseridos = await tx
           .insert(complementos)
-          .values({ chamadoId: id, texto, em: agora, rascunhoId: rascunho.id });
+          .values({ chamadoId: id, texto, em: agora, rascunhoId: rascunho.id })
+          .onConflictDoNothing({ target: complementos.rascunhoId })
+          .returning({ id: complementos.id });
+        if (inseridos.length === 0) return false;
         await tx
           .update(chamados)
           .set({ status: decisao.valor.status, atualizadoEm: agora })
           .where(eq(chamados.id, id));
+        return true;
       });
-      return decisao;
+      return aplicadoAgora ? decisao : doDono(id, rascunho.dono);
     },
 
     alterarStatus: tentarAlterarStatus,
