@@ -59,8 +59,12 @@ export type ErroDeTransicao = {
   readonly tentouPor: UserId;
 };
 
-export type ErroDeConteudo =
-  ErroDeDados | { readonly motivo: "campo_vazio"; readonly campo: "texto" };
+type ErroDeComplemento = {
+  readonly motivo: "campo_vazio";
+  readonly campo: "texto";
+};
+
+export type ErroDeConteudo = ErroDeDados | ErroDeComplemento;
 
 type Autoria = {
   readonly por: UserId;
@@ -111,24 +115,28 @@ export function descartar<C extends ConteudoDoRascunho>(
 function lerConteudo<C extends ConteudoDoRascunho>(
   conteudo: C,
 ): Resultado<ConteudoDoTipo<C["tipo"]>, ErroDeConteudo> {
-  return lerQualquerConteudo(conteudo) as Resultado<ConteudoDoTipo<C["tipo"]>, ErroDeConteudo>;
+  return lerPorTipo(conteudo) as Resultado<ConteudoDoTipo<C["tipo"]>, ErroDeConteudo>;
 }
 
-function lerQualquerConteudo(
-  conteudo: ConteudoDoRascunho,
-): Resultado<ConteudoDoRascunho, ErroDeConteudo> {
+function lerPorTipo(conteudo: ConteudoDoRascunho): Resultado<ConteudoDoRascunho, ErroDeConteudo> {
   switch (conteudo.tipo) {
-    case "novo_chamado": {
-      const dados = lerDadosDoChamado(conteudo.dados);
-      if (!dados.ok) return dados;
-      return sucesso(Object.freeze({ tipo: "novo_chamado", dados: dados.valor }));
-    }
-    case "complemento": {
-      const texto = conteudo.texto.trim();
-      if (texto === "") return falha({ motivo: "campo_vazio", campo: "texto" });
-      return sucesso(Object.freeze({ ...conteudo, texto }));
-    }
+    case "novo_chamado":
+      return lerNovoChamado(conteudo);
+    case "complemento":
+      return lerComplemento(conteudo);
   }
+}
+
+function lerNovoChamado(conteudo: NovoChamado): Resultado<NovoChamado, ErroDeDados> {
+  const dados = lerDadosDoChamado(conteudo.dados);
+  if (!dados.ok) return dados;
+  return sucesso(Object.freeze({ tipo: conteudo.tipo, dados: dados.valor }));
+}
+
+function lerComplemento(conteudo: Complemento): Resultado<Complemento, ErroDeComplemento> {
+  const texto = conteudo.texto.trim();
+  if (texto === "") return falha({ motivo: "campo_vazio", campo: "texto" });
+  return sucesso(Object.freeze({ ...conteudo, texto }));
 }
 
 function somenteODono<T>(
