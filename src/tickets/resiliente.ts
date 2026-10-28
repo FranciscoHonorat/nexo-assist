@@ -1,5 +1,5 @@
 import type { Resultado } from "../domain/resultado.js";
-import type { TicketClient } from "./ticket-client.js";
+import { ehIndisponivel, type TicketClient } from "./ticket-client.js";
 
 export type PoliticaDeRetry = {
   readonly tentativas: number;
@@ -27,20 +27,14 @@ export function ticketClientResiliente(
   politica: PoliticaDeRetry = POLITICA_PADRAO,
   { esperar, aleatorio }: DependenciasDeEspera = RELOGIO_REAL,
 ): TicketClient {
-  const espera = (tentativa: number): number => {
-    const metade = (politica.esperaInicial * politica.fator ** tentativa) / 2;
-    return metade + aleatorio() * metade;
-  };
-
   const tentar = async <T, E extends { readonly motivo: string }>(
     executar: () => Promise<Resultado<T, E>>,
     tentativa = 0,
   ): Promise<Resultado<T, E>> => {
     const resultado = await executar();
     const ultimaTentativa = tentativa + 1 >= politica.tentativas;
-    if (resultado.ok || resultado.erro.motivo !== "indisponivel" || ultimaTentativa)
-      return resultado;
-    await esperar(espera(tentativa));
+    if (resultado.ok || !ehIndisponivel(resultado.erro) || ultimaTentativa) return resultado;
+    await esperar(esperaComJitter(politica, tentativa, aleatorio()));
     return tentar(executar, tentativa + 1);
   };
 
@@ -51,4 +45,13 @@ export function ticketClientResiliente(
     complementar: (rascunho, agora) => tentar(() => base.complementar(rascunho, agora)),
     alterarStatus: (id, alteracao, agora) => tentar(() => base.alterarStatus(id, alteracao, agora)),
   };
+}
+
+function esperaComJitter(
+  { esperaInicial, fator }: PoliticaDeRetry,
+  tentativa: number,
+  sorteio: number,
+): number {
+  const metade = (esperaInicial * fator ** tentativa) / 2;
+  return metade + sorteio * metade;
 }

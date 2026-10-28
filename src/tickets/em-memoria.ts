@@ -4,12 +4,13 @@ import type { Complemento, NovoChamado, Rascunho } from "../domain/rascunho.js";
 import { encadear, falha, sucesso, type Resultado } from "../domain/resultado.js";
 import { lerTicketId, type TicketId, type TipoChamado } from "../domain/ticket-id.js";
 import type { UserId } from "../domain/user-id.js";
-import type {
-  ErroDeComplementacao,
-  ErroDeConsulta,
-  ErroDeInfraestrutura,
-  EstadoInicial,
-  TicketClient,
+import {
+  INDISPONIVEL,
+  type ErroDeComplementacao,
+  type ErroDeConsulta,
+  type ErroDeInfraestrutura,
+  type EstadoInicial,
+  type TicketClient,
 } from "./ticket-client.js";
 
 const PREFIXO_POR_TIPO = {
@@ -27,7 +28,7 @@ type Simulacao = {
   readonly falhar?: (operacao: Operacao) => FalhaSimulada | undefined;
 };
 
-const INDISPONIVEL = falha({ motivo: "indisponivel" } as const);
+const RESPOSTA_INDISPONIVEL = falha(INDISPONIVEL);
 
 export function ticketClientEmMemoria(
   { chamados }: EstadoInicial,
@@ -54,9 +55,9 @@ export function ticketClientEmMemoria(
     executar: () => Resultado<T, E>,
   ): Promise<Resultado<T, E | ErroDeInfraestrutura>> => {
     const falhaSimulada = falhar(operacao);
-    if (falhaSimulada === "antes") return Promise.resolve(INDISPONIVEL);
+    if (falhaSimulada === "antes") return Promise.resolve(RESPOSTA_INDISPONIVEL);
     const resultado = executar();
-    return Promise.resolve(falhaSimulada === "depois" ? INDISPONIVEL : resultado);
+    return Promise.resolve(falhaSimulada === "depois" ? RESPOSTA_INDISPONIVEL : resultado);
   };
 
   const criarUmaVez = (rascunho: Rascunho<"confirmado", NovoChamado>, agora: Date): Chamado => {
