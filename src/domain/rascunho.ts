@@ -1,7 +1,12 @@
+import type { RascunhoId } from "./rascunho-id.js";
+import { falha, sucesso, type Resultado } from "./resultado.js";
+import type { UserId } from "./user-id.js";
+
 declare const confirmadoPeloFuncionario: unique symbol;
 
 type CamposComuns = {
-  readonly id: string;
+  readonly id: RascunhoId;
+  readonly dono: UserId;
   readonly criadoEm: Date;
 };
 
@@ -24,16 +29,53 @@ export type StatusRascunho = keyof PorStatus;
 
 export type Rascunho<S extends StatusRascunho> = PorStatus[S];
 
-export function criarRascunho(id: string, agora: Date): Rascunho<"pendente"> {
-  return Object.freeze({ id, status: "pendente", criadoEm: agora });
+export type ErroDeTransicao = {
+  readonly motivo: "nao_e_o_dono";
+  readonly rascunhoId: RascunhoId;
+  readonly tentouPor: UserId;
+};
+
+type Autoria = {
+  readonly por: UserId;
+  readonly agora: Date;
+};
+
+type NovoRascunho = {
+  readonly id: RascunhoId;
+  readonly dono: UserId;
+  readonly agora: Date;
+};
+
+export function criarRascunho({ id, dono, agora }: NovoRascunho): Rascunho<"pendente"> {
+  return Object.freeze({ id, dono, status: "pendente", criadoEm: agora });
 }
 
-export function confirmar(rascunho: Rascunho<"pendente">, agora: Date): Rascunho<"confirmado"> {
-  return aplicarMarca({ ...rascunho, status: "confirmado", confirmadoEm: agora });
+export function confirmar(
+  rascunho: Rascunho<"pendente">,
+  { por, agora }: Autoria,
+): Resultado<Rascunho<"confirmado">, ErroDeTransicao> {
+  return somenteODono(rascunho, por, () =>
+    aplicarMarca({ ...rascunho, status: "confirmado", confirmadoEm: agora }),
+  );
 }
 
-export function descartar(rascunho: Rascunho<"pendente">, agora: Date): Rascunho<"descartado"> {
-  return Object.freeze({ ...rascunho, status: "descartado", descartadoEm: agora });
+export function descartar(
+  rascunho: Rascunho<"pendente">,
+  { por, agora }: Autoria,
+): Resultado<Rascunho<"descartado">, ErroDeTransicao> {
+  return somenteODono(rascunho, por, () =>
+    Object.freeze({ ...rascunho, status: "descartado", descartadoEm: agora }),
+  );
+}
+
+function somenteODono<T>(
+  rascunho: Rascunho<"pendente">,
+  por: UserId,
+  transicionar: () => T,
+): Resultado<T, ErroDeTransicao> {
+  if (por !== rascunho.dono)
+    return falha({ motivo: "nao_e_o_dono", rascunhoId: rascunho.id, tentouPor: por });
+  return sucesso(transicionar());
 }
 
 type SemMarca = Omit<Rascunho<"confirmado">, typeof confirmadoPeloFuncionario>;
