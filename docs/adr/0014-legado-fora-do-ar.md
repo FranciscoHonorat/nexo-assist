@@ -32,6 +32,12 @@ o que o Anexo A proíbe.
    caso uma nova tentativa recebe um `indisponivel` antigo.
 4. **Os testes de falha ficam fora do contrato**, em `em-memoria.test.ts`, porque um sistema real
    não permite simular falhas.
+5. **Um cliente resiliente envolve qualquer `TicketClient`** (`ticketClientResiliente`). Ele
+   repete **só** `indisponivel`; erros de regra voltam na hora, porque repeti-los não muda a
+   resposta. A política padrão é de até 4 tentativas, com _backoff_ exponencial a partir de
+   200 ms e _equal jitter_: a espera fica entre a metade e o valor cheio (100–200, 200–400 e
+   400–800 ms). O pior caso soma 1,4 s, dentro dos "alguns segundos" do PRD. O cliente
+   resiliente passa no mesmo contrato das outras implementações.
 
 ## Opções consideradas
 
@@ -63,6 +69,13 @@ Uma sabotagem mostrou uma fragilidade nos testes: os de `complementar` e `altera
 provavam que não havia duplicação, e não que a primeira tentativa tinha executado. Eles passaram
 a consultar o chamado entre a falha e a nova tentativa.
 
+O _jitter_ existe para que vários clientes que encontraram o legado fora do ar no mesmo instante
+não tentem de novo todos juntos, o que manteria o legado sobrecarregado. O _equal jitter_ garante
+uma espera mínima (a metade), ao contrário do _full jitter_, que pode sortear zero.
+
+A espera e o sorteio são dependências injetadas, então os testes são determinísticos e
+instantâneos. Um teste usa os timers falsos do Vitest para verificar a espera real.
+
 ## Consequências
 
 - Mais fácil: escrever o retry, porque o erro de infraestrutura é distinguível dos erros de regra.
@@ -72,4 +85,4 @@ a consultar o chamado entre a falha e a nova tentativa.
 
 1. [x] `ErroDeInfraestrutura` em todas as operações.
 2. [x] Falhas simuladas antes e depois de executar.
-3. [ ] Retry com backoff que repete só falhas de infraestrutura.
+3. [x] Retry com backoff que repete só falhas de infraestrutura.
