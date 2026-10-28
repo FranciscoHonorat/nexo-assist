@@ -75,4 +75,4 @@ nova tentativa pode dar certo. Isso entra junto com as falhas injetáveis.
 1. [x] Rascunho genérico no tipo de conteúdo.
 2. [x] `complementar` no contrato e na versão em memória.
 3. [x] Regra de reabertura no domínio.
-4. [ ] Não guardar falhas de infraestrutura na idempotência.
+4. [x] Não guardar falhas de infraestrutura na idempotência ([ADR-0014](0014-legado-fora-do-ar.md)).

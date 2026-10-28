@@ -33,3 +33,4 @@ de alteração de status.
 | [0011](0011-prazos-em-horas-uteis-de-sao-paulo.md)   | Prazos em horas úteis no horário de São Paulo                  | Aceito | Feito         |
 | [0012](0012-complemento-e-reabertura-de-chamados.md) | Complemento e reabertura de chamados                           | Aceito | Feito         |
 | [0013](0013-transicoes-de-status-do-chamado.md)      | Transições de status do chamado                                | Aceito | Feito         |
+| [0014](0014-legado-fora-do-ar.md)                    | Legado fora do ar                                              | Aceito | Em andamento  |
