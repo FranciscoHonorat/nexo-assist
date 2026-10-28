@@ -47,7 +47,12 @@ const incidenteDoJoao = existente("INC-20150", joao, notebookLento);
 
 function rascunhoConfirmadoDaAna(rascunhoId: string, dados: DadosDoChamado) {
   const pendente = valorDe(
-    criarRascunho({ id: valorDe(lerRascunhoId(rascunhoId)), dono: ana, dados, agora: t1 }),
+    criarRascunho({
+      id: valorDe(lerRascunhoId(rascunhoId)),
+      dono: ana,
+      conteudo: { tipo: "novo_chamado", dados },
+      agora: t1,
+    }),
   );
   return valorDe(confirmar(pendente, { por: ana, agora: t1 }));
 }

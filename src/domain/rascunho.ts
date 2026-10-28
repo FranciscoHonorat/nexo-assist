@@ -1,35 +1,57 @@
-import { lerDadosDoChamado, type DadosDoChamado, type ErroDeConteudo } from "./chamado.js";
+import { lerDadosDoChamado, type DadosDoChamado, type ErroDeDados } from "./chamado.js";
 import type { RascunhoId } from "./rascunho-id.js";
 import { falha, sucesso, type Resultado } from "./resultado.js";
+import type { TicketId } from "./ticket-id.js";
 import type { UserId } from "./user-id.js";
 
 declare const confirmadoPeloFuncionario: unique symbol;
 
-type CamposComuns = {
+export type NovoChamado = {
+  readonly tipo: "novo_chamado";
+  readonly dados: DadosDoChamado;
+};
+
+export type Complemento = {
+  readonly tipo: "complemento";
+  readonly chamado: TicketId;
+  readonly texto: string;
+};
+
+export type ConteudoDoRascunho = NovoChamado | Complemento;
+
+type ConteudoDoTipo<T extends ConteudoDoRascunho["tipo"]> = Extract<
+  ConteudoDoRascunho,
+  { readonly tipo: T }
+>;
+
+type CamposComuns<C extends ConteudoDoRascunho> = {
   readonly id: RascunhoId;
   readonly dono: UserId;
-  readonly dados: DadosDoChamado;
+  readonly conteudo: C;
   readonly criadoEm: Date;
 };
 
-type PorStatus = {
-  pendente: CamposComuns & {
+type PorStatus<C extends ConteudoDoRascunho> = {
+  pendente: CamposComuns<C> & {
     readonly status: "pendente";
   };
-  confirmado: CamposComuns & {
+  confirmado: CamposComuns<C> & {
     readonly status: "confirmado";
     readonly confirmadoEm: Date;
     readonly [confirmadoPeloFuncionario]: true;
   };
-  descartado: CamposComuns & {
+  descartado: CamposComuns<C> & {
     readonly status: "descartado";
     readonly descartadoEm: Date;
   };
 };
 
-export type StatusRascunho = keyof PorStatus;
+export type StatusRascunho = keyof PorStatus<ConteudoDoRascunho>;
 
-export type Rascunho<S extends StatusRascunho> = PorStatus[S];
+export type Rascunho<
+  S extends StatusRascunho,
+  C extends ConteudoDoRascunho = ConteudoDoRascunho,
+> = PorStatus<C>[S];
 
 export type ErroDeTransicao = {
   readonly motivo: "nao_e_o_dono";
@@ -37,50 +59,76 @@ export type ErroDeTransicao = {
   readonly tentouPor: UserId;
 };
 
-export type { ErroDeConteudo };
+export type ErroDeConteudo =
+  ErroDeDados | { readonly motivo: "campo_vazio"; readonly campo: "texto" };
 
 type Autoria = {
   readonly por: UserId;
   readonly agora: Date;
 };
 
-type NovoRascunho = {
+type NovoRascunho<C extends ConteudoDoRascunho> = {
   readonly id: RascunhoId;
   readonly dono: UserId;
-  readonly dados: DadosDoChamado;
+  readonly conteudo: C;
   readonly agora: Date;
 };
 
-export function criarRascunho(novo: NovoRascunho): Resultado<Rascunho<"pendente">, ErroDeConteudo> {
-  const dados = lerDadosDoChamado(novo.dados);
-  if (!dados.ok) return dados;
+export function criarRascunho<C extends ConteudoDoRascunho>(
+  novo: NovoRascunho<C>,
+): Resultado<Rascunho<"pendente", ConteudoDoTipo<C["tipo"]>>, ErroDeConteudo> {
+  const conteudo = lerConteudo(novo.conteudo);
+  if (!conteudo.ok) return conteudo;
   return sucesso(
     Object.freeze({
       id: novo.id,
       dono: novo.dono,
-      dados: dados.valor,
+      conteudo: conteudo.valor,
       status: "pendente",
       criadoEm: novo.agora,
     }),
   );
 }
 
-export function confirmar(
-  rascunho: Rascunho<"pendente">,
+export function confirmar<C extends ConteudoDoRascunho>(
+  rascunho: Rascunho<"pendente", C>,
   { por, agora }: Autoria,
-): Resultado<Rascunho<"confirmado">, ErroDeTransicao> {
+): Resultado<Rascunho<"confirmado", C>, ErroDeTransicao> {
   return somenteODono(rascunho, por, () =>
     aplicarMarca({ ...rascunho, status: "confirmado", confirmadoEm: agora }),
   );
 }
 
-export function descartar(
-  rascunho: Rascunho<"pendente">,
+export function descartar<C extends ConteudoDoRascunho>(
+  rascunho: Rascunho<"pendente", C>,
   { por, agora }: Autoria,
-): Resultado<Rascunho<"descartado">, ErroDeTransicao> {
+): Resultado<Rascunho<"descartado", C>, ErroDeTransicao> {
   return somenteODono(rascunho, por, () =>
     Object.freeze({ ...rascunho, status: "descartado", descartadoEm: agora }),
   );
+}
+
+function lerConteudo<C extends ConteudoDoRascunho>(
+  conteudo: C,
+): Resultado<ConteudoDoTipo<C["tipo"]>, ErroDeConteudo> {
+  return lerQualquerConteudo(conteudo) as Resultado<ConteudoDoTipo<C["tipo"]>, ErroDeConteudo>;
+}
+
+function lerQualquerConteudo(
+  conteudo: ConteudoDoRascunho,
+): Resultado<ConteudoDoRascunho, ErroDeConteudo> {
+  switch (conteudo.tipo) {
+    case "novo_chamado": {
+      const dados = lerDadosDoChamado(conteudo.dados);
+      if (!dados.ok) return dados;
+      return sucesso(Object.freeze({ tipo: "novo_chamado", dados: dados.valor }));
+    }
+    case "complemento": {
+      const texto = conteudo.texto.trim();
+      if (texto === "") return falha({ motivo: "campo_vazio", campo: "texto" });
+      return sucesso(Object.freeze({ ...conteudo, texto }));
+    }
+  }
 }
 
 function somenteODono<T>(
@@ -93,8 +141,13 @@ function somenteODono<T>(
   return sucesso(transicionar());
 }
 
-type SemMarca = Omit<Rascunho<"confirmado">, typeof confirmadoPeloFuncionario>;
+type SemMarca<C extends ConteudoDoRascunho> = Omit<
+  Rascunho<"confirmado", C>,
+  typeof confirmadoPeloFuncionario
+>;
 
-function aplicarMarca(confirmado: SemMarca): Rascunho<"confirmado"> {
-  return Object.freeze(confirmado) as Rascunho<"confirmado">;
+function aplicarMarca<C extends ConteudoDoRascunho>(
+  confirmado: SemMarca<C>,
+): Rascunho<"confirmado", C> {
+  return Object.freeze(confirmado) as Rascunho<"confirmado", C>;
 }

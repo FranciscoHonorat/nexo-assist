@@ -29,14 +29,12 @@ export type Chamado = {
 
 const CAMPOS_OBRIGATORIOS_DE_TEXTO = ["titulo", "descricao"] as const;
 
-export type ErroDeConteudo = {
+export type ErroDeDados = {
   readonly motivo: "campo_vazio";
   readonly campo: (typeof CAMPOS_OBRIGATORIOS_DE_TEXTO)[number];
 };
 
-export function lerDadosDoChamado(
-  dados: DadosDoChamado,
-): Resultado<DadosDoChamado, ErroDeConteudo> {
+export function lerDadosDoChamado(dados: DadosDoChamado): Resultado<DadosDoChamado, ErroDeDados> {
   const aparados = { ...dados, titulo: dados.titulo.trim(), descricao: dados.descricao.trim() };
   const campoVazio = CAMPOS_OBRIGATORIOS_DE_TEXTO.find((campo) => aparados[campo] === "");
   if (campoVazio) return falha({ motivo: "campo_vazio", campo: campoVazio });

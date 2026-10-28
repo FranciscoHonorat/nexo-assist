@@ -36,9 +36,9 @@ export function ticketClientEmMemoria({ chamados }: EstadoInicial): TicketClient
       const jaCriado = criadosPorRascunho.get(rascunho.id);
       if (jaCriado) return Promise.resolve(jaCriado);
       const chamado: Chamado = Object.freeze({
-        id: proximoId(rascunho.dados.tipo),
+        id: proximoId(rascunho.conteudo.dados.tipo),
         dono: rascunho.dono,
-        dados: rascunho.dados,
+        dados: rascunho.conteudo.dados,
         status: "aberto",
         criadoEm: agora,
         atualizadoEm: agora,
