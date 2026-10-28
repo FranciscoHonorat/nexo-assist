@@ -4,8 +4,14 @@ import { alterarStatusDoChamado, complementarChamado, type Chamado } from "../..
 import { falha, sucesso, type Resultado } from "../../domain/resultado.js";
 import type { TicketId, TipoChamado } from "../../domain/ticket-id.js";
 import type { UserId } from "../../domain/user-id.js";
-import type { ErroDeConsulta, TicketClient } from "../ticket-client.js";
+import {
+  INDISPONIVEL,
+  type ErroDeConsulta,
+  type ErroDeInfraestrutura,
+  type TicketClient,
+} from "../ticket-client.js";
 import { chamados, complementos, SEQUENCIA_POR_TIPO } from "./esquema.js";
+import { ehFalhaDeInfraestrutura } from "./falhas.js";
 
 export type Banco = PgDatabase<PgQueryResultHKT>;
 
@@ -61,7 +67,7 @@ export function ticketClientPostgres(db: Banco): TicketClient {
     return decisao;
   };
 
-  return {
+  const operacoes: TicketClient = {
     listar: async (dono) =>
       sucesso(
         await comComplementos(await db.select().from(chamados).where(eq(chamados.dono, dono))),
@@ -119,6 +125,8 @@ export function ticketClientPostgres(db: Banco): TicketClient {
 
     alterarStatus: tentarAlterarStatus,
   };
+
+  return protegerContraQuedas(operacoes);
 }
 
 function paraChamado(linha: LinhaDoChamado, extras: readonly LinhaDoComplemento[]): Chamado {
@@ -133,4 +141,26 @@ function paraChamado(linha: LinhaDoChamado, extras: readonly LinhaDoComplemento[
     atualizadoEm,
     complementos: Object.freeze(extras.map(({ texto, em }) => Object.freeze({ texto, em }))),
   });
+}
+
+function protegerContraQuedas(cliente: TicketClient): TicketClient {
+  return {
+    listar: (dono) => protegido(() => cliente.listar(dono)),
+    obter: (id, por) => protegido(() => cliente.obter(id, por)),
+    criar: (rascunho, agora) => protegido(() => cliente.criar(rascunho, agora)),
+    complementar: (rascunho, agora) => protegido(() => cliente.complementar(rascunho, agora)),
+    alterarStatus: (id, alteracao, agora) =>
+      protegido(() => cliente.alterarStatus(id, alteracao, agora)),
+  };
+}
+
+async function protegido<T, E>(
+  executar: () => Promise<Resultado<T, E>>,
+): Promise<Resultado<T, E | ErroDeInfraestrutura>> {
+  try {
+    return await executar();
+  } catch (erro) {
+    if (ehFalhaDeInfraestrutura(erro)) return falha(INDISPONIVEL);
+    throw erro;
+  }
 }
