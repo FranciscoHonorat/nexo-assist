@@ -1,9 +1,14 @@
 import { alterarStatusDoChamado, complementarChamado, type Chamado } from "../domain/chamado.js";
 import type { RascunhoId } from "../domain/rascunho-id.js";
-import type { Complemento, Rascunho } from "../domain/rascunho.js";
-import { falha, sucesso, type Resultado } from "../domain/resultado.js";
+import { encadear, falha, sucesso, type Resultado } from "../domain/resultado.js";
 import { lerTicketId, type TicketId, type TipoChamado } from "../domain/ticket-id.js";
-import type { ErroDeComplementacao, EstadoInicial, TicketClient } from "./ticket-client.js";
+import type { UserId } from "../domain/user-id.js";
+import type {
+  ErroDeComplementacao,
+  ErroDeConsulta,
+  EstadoInicial,
+  TicketClient,
+} from "./ticket-client.js";
 
 const PREFIXO_POR_TIPO = {
   incidente: "INC",
@@ -24,15 +29,21 @@ export function ticketClientEmMemoria({ chamados }: EstadoInicial): TicketClient
     return id;
   };
 
+  const doDono = (id: TicketId, por: UserId): Resultado<Chamado, ErroDeConsulta> => {
+    const chamado = porId.get(id);
+    return chamado?.dono === por ? sucesso(chamado) : falha({ motivo: "nao_encontrado", id });
+  };
+
+  const gravar = <E>(resultado: Resultado<Chamado, E>): Resultado<Chamado, E> => {
+    if (resultado.ok) porId.set(resultado.valor.id, resultado.valor);
+    return resultado;
+  };
+
   return {
     listar: (dono) =>
       Promise.resolve([...porId.values()].filter((chamado) => chamado.dono === dono)),
 
-    obter: (id, por) => {
-      const chamado = porId.get(id);
-      if (chamado?.dono !== por) return Promise.resolve(falha({ motivo: "nao_encontrado", id }));
-      return Promise.resolve(sucesso(chamado));
-    },
+    obter: (id, por) => Promise.resolve(doDono(id, por)),
 
     criar: (rascunho, agora) => {
       const jaCriado = criadosPorRascunho.get(rascunho.id);
@@ -54,31 +65,25 @@ export function ticketClientEmMemoria({ chamados }: EstadoInicial): TicketClient
     complementar: (rascunho, agora) => {
       const jaAplicado = complementadosPorRascunho.get(rascunho.id);
       if (jaAplicado) return Promise.resolve(jaAplicado);
-      const resultado = aplicarComplemento(porId.get(rascunho.conteudo.chamado), rascunho, agora);
-      if (resultado.ok) porId.set(resultado.valor.id, resultado.valor);
+      const { chamado, texto } = rascunho.conteudo;
+      const resultado = gravar(
+        encadear(doDono(chamado, rascunho.dono), (atual) =>
+          complementarChamado(atual, { texto, agora }),
+        ),
+      );
       complementadosPorRascunho.set(rascunho.id, resultado);
       return Promise.resolve(resultado);
     },
 
-    alterarStatus: (id, alteracao, agora) => {
-      const chamado = porId.get(id);
-      if (chamado?.dono !== alteracao.por)
-        return Promise.resolve(falha({ motivo: "nao_encontrado", id }));
-      const resultado = alterarStatusDoChamado(chamado, alteracao, agora);
-      if (resultado.ok) porId.set(id, resultado.valor);
-      return Promise.resolve(resultado);
-    },
+    alterarStatus: (id, alteracao, agora) =>
+      Promise.resolve(
+        gravar(
+          encadear(doDono(id, alteracao.por), (atual) =>
+            alterarStatusDoChamado(atual, alteracao, agora),
+          ),
+        ),
+      ),
   };
-}
-
-function aplicarComplemento(
-  chamado: Chamado | undefined,
-  rascunho: Rascunho<"confirmado", Complemento>,
-  agora: Date,
-): Resultado<Chamado, ErroDeComplementacao> {
-  if (chamado?.dono !== rascunho.dono)
-    return falha({ motivo: "nao_encontrado", id: rascunho.conteudo.chamado });
-  return complementarChamado(chamado, { texto: rascunho.conteudo.texto, agora });
 }
 
 function montarId(tipo: TipoChamado, numero: number): TicketId {
