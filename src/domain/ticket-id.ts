@@ -1,5 +1,5 @@
-import { falha, sucesso, type Resultado } from "./resultado.js";
-import type { ErroDeLeitura, Validado } from "./validado.js";
+import type { Resultado } from "./resultado.js";
+import { lerNoFormato, type ErroDeLeitura, type Validado } from "./validado.js";
 
 const TIPO_POR_PREFIXO = {
   INC: "incidente",
@@ -24,9 +24,7 @@ const PREFIXOS = Object.keys(TIPO_POR_PREFIXO).join("|");
 const FORMATO = new RegExp(`^(${PREFIXOS})${SEPARADOR}\\d{1,${String(MAXIMO_DE_DIGITOS)}}$`);
 
 export function lerTicketId(texto: string): Resultado<TicketId, ErroTicketId> {
-  const normalizado = texto.trim().toUpperCase();
-  if (!FORMATO.test(normalizado)) return falha({ motivo: "formato_invalido", recebido: texto });
-  return sucesso(normalizado as TicketId);
+  return lerNoFormato(texto, { formato: FORMATO, normalizar: (t) => t.trim().toUpperCase() });
 }
 
 export function tipoDoChamado<P extends Prefixo>(id: TicketId<P>): TipoPorPrefixo[P] {
