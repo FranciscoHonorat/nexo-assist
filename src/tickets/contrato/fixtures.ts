@@ -81,4 +81,4 @@ export const RASCUNHO_2 = "rsc_7c9e6679-7425-40de-944b-e07fc1f90ae7";
 
 export const chamadosIniciais = [incidenteDaAna, requisicaoDaAna, incidenteDoJoao];
 
-export type Fabrica = (inicial: EstadoInicial) => TicketClient;
+export type Fabrica = (inicial: EstadoInicial) => TicketClient | Promise<TicketClient>;

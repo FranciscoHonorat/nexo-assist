@@ -19,7 +19,7 @@ export function cenariosDeCriacao(fabricar: Fabrica): void {
   describe("criar", () => {
     it("cria um chamado aberto com os dados confirmados e o dono do rascunho", async () => {
       const chamado = valorDe(
-        await comChamados().criar(rascunhoConfirmadoDaAna(RASCUNHO_1, notebookLento), t1),
+        await (await comChamados()).criar(rascunhoConfirmadoDaAna(RASCUNHO_1, notebookLento), t1),
       );
 
       expect(chamado).toMatchObject({
@@ -37,14 +37,14 @@ export function cenariosDeCriacao(fabricar: Fabrica): void {
       ["requisicao", segundoMonitor],
     ] as const)("o prefixo do id combina com o tipo (%s)", async (tipo, dados) => {
       const chamado = valorDe(
-        await comChamados().criar(rascunhoConfirmadoDaAna(RASCUNHO_1, dados), t1),
+        await (await comChamados()).criar(rascunhoConfirmadoDaAna(RASCUNHO_1, dados), t1),
       );
 
       expect(tipoDoChamado(chamado.id)).toBe(tipo);
     });
 
     it("o chamado criado aparece na lista do dono", async () => {
-      const servico = comChamados();
+      const servico = await comChamados();
       const chamado = valorDe(
         await servico.criar(rascunhoConfirmadoDaAna(RASCUNHO_1, notebookLento), t1),
       );
@@ -53,7 +53,7 @@ export function cenariosDeCriacao(fabricar: Fabrica): void {
     });
 
     it("repetir a criação com o mesmo rascunho devolve o mesmo chamado, sem duplicar", async () => {
-      const servico = comChamados();
+      const servico = await comChamados();
       const rascunho = rascunhoConfirmadoDaAna(RASCUNHO_1, notebookLento);
 
       const primeiro = valorDe(await servico.criar(rascunho, t1));
@@ -64,7 +64,7 @@ export function cenariosDeCriacao(fabricar: Fabrica): void {
     });
 
     it("rascunhos diferentes viram chamados diferentes", async () => {
-      const servico = comChamados();
+      const servico = await comChamados();
 
       const primeiro = valorDe(
         await servico.criar(rascunhoConfirmadoDaAna(RASCUNHO_1, notebookLento), t1),

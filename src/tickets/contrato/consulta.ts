@@ -15,27 +15,27 @@ export function cenariosDeConsulta(fabricar: Fabrica): void {
 
   describe("listar", () => {
     it("devolve só os chamados do dono", async () => {
-      const chamados = valorDe(await comChamados().listar(ana));
+      const chamados = valorDe(await (await comChamados()).listar(ana));
 
       expect(chamados).toHaveLength(2);
       expect(chamados).toEqual(expect.arrayContaining([incidenteDaAna, requisicaoDaAna]));
     });
 
     it("devolve lista vazia para quem não tem chamados", async () => {
-      expect(valorDe(await fabricar({ chamados: [] }).listar(ana))).toEqual([]);
+      expect(valorDe(await (await fabricar({ chamados: [] })).listar(ana))).toEqual([]);
     });
   });
 
   describe("obter", () => {
     it("o dono obtém o próprio chamado", async () => {
-      expect(await comChamados().obter(incidenteDaAna.id, ana)).toEqual({
+      expect(await (await comChamados()).obter(incidenteDaAna.id, ana)).toEqual({
         ok: true,
         valor: incidenteDaAna,
       });
     });
 
     it("o chamado de outra pessoa é tratado como inexistente, sem revelar que existe", async () => {
-      expect(await comChamados().obter(incidenteDoJoao.id, ana)).toEqual({
+      expect(await (await comChamados()).obter(incidenteDoJoao.id, ana)).toEqual({
         ok: false,
         erro: { motivo: "nao_encontrado", id: incidenteDoJoao.id },
       });
@@ -44,7 +44,7 @@ export function cenariosDeConsulta(fabricar: Fabrica): void {
     it("um id que não existe devolve o mesmo erro", async () => {
       const inexistente = valorDe(lerTicketId("INC-99999"));
 
-      expect(await comChamados().obter(inexistente, ana)).toEqual({
+      expect(await (await comChamados()).obter(inexistente, ana)).toEqual({
         ok: false,
         erro: { motivo: "nao_encontrado", id: inexistente },
       });

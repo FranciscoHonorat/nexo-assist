@@ -20,7 +20,7 @@ export function cenariosDeAlteracaoDeStatus(fabricar: Fabrica): void {
 
   describe("alterarStatus", () => {
     it("muda o status quando ele ainda é o esperado e renova a última atualização", async () => {
-      const servico = comChamados();
+      const servico = await comChamados();
 
       const resultado = await servico.alterarStatus(
         incidenteDaAna.id,
@@ -38,7 +38,7 @@ export function cenariosDeAlteracaoDeStatus(fabricar: Fabrica): void {
         status: "aguardando_analista",
         atualizadoEm: t0,
       });
-      const servico = fabricar({ chamados: [aguardando] });
+      const servico = await fabricar({ chamados: [aguardando] });
 
       const resultado = await servico.alterarStatus(
         aguardando.id,
@@ -59,7 +59,7 @@ export function cenariosDeAlteracaoDeStatus(fabricar: Fabrica): void {
     });
 
     it("repetir uma mudança que já foi aplicada devolve sucesso sem alterar nada", async () => {
-      const servico = comChamados();
+      const servico = await comChamados();
       const transicao = { de: "aberto", para: "aguardando_analista", por: ana } as const;
 
       const primeira = await servico.alterarStatus(incidenteDaAna.id, transicao, t1);
@@ -73,7 +73,7 @@ export function cenariosDeAlteracaoDeStatus(fabricar: Fabrica): void {
     });
 
     it("o chamado de outra pessoa é tratado como inexistente e não é alterado", async () => {
-      const servico = comChamados();
+      const servico = await comChamados();
 
       const resultado = await servico.alterarStatus(
         incidenteDoJoao.id,
@@ -95,11 +95,9 @@ export function cenariosDeAlteracaoDeStatus(fabricar: Fabrica): void {
       const inexistente = valorDe(lerTicketId("INC-99999"));
 
       expect(
-        await comChamados().alterarStatus(
-          inexistente,
-          { de: "aberto", para: "resolvido", por: ana },
-          t1,
-        ),
+        await (
+          await comChamados()
+        ).alterarStatus(inexistente, { de: "aberto", para: "resolvido", por: ana }, t1),
       ).toEqual({ ok: false, erro: { motivo: "nao_encontrado", id: inexistente } });
     });
   });

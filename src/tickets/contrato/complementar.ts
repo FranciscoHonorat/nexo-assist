@@ -31,7 +31,7 @@ export function cenariosDeComplemento(fabricar: Fabrica): void {
       });
 
     it("acrescenta o texto, renova a última atualização e mantém o status", async () => {
-      const servico = comChamados();
+      const servico = await comChamados();
 
       const resultado = await servico.complementar(
         complementoConfirmadoDaAna(RASCUNHO_1, incidenteDaAna.id, texto),
@@ -49,10 +49,9 @@ export function cenariosDeComplemento(fabricar: Fabrica): void {
         atualizadoEm: t0,
       });
 
-      const resultado = await fabricar({ chamados: [aguardando] }).complementar(
-        complementoConfirmadoDaAna(RASCUNHO_1, aguardando.id, texto),
-        t1,
-      );
+      const resultado = await (
+        await fabricar({ chamados: [aguardando] })
+      ).complementar(complementoConfirmadoDaAna(RASCUNHO_1, aguardando.id, texto), t1);
 
       expect(resultado).toMatchObject({ ok: true, valor: { status: "aguardando_analista" } });
     });
@@ -63,10 +62,9 @@ export function cenariosDeComplemento(fabricar: Fabrica): void {
     ])("um chamado resolvido %s é reaberto", async (_, resolvidoHa) => {
       const resolvido = resolvidoDaAna(resolvidoHa);
 
-      const resultado = await fabricar({ chamados: [resolvido] }).complementar(
-        complementoConfirmadoDaAna(RASCUNHO_1, resolvido.id, texto),
-        t1,
-      );
+      const resultado = await (
+        await fabricar({ chamados: [resolvido] })
+      ).complementar(complementoConfirmadoDaAna(RASCUNHO_1, resolvido.id, texto), t1);
 
       expect(resultado).toEqual({
         ok: true,
@@ -81,7 +79,7 @@ export function cenariosDeComplemento(fabricar: Fabrica): void {
 
     it("um chamado resolvido há mais de 7 dias não é reaberto nem alterado", async () => {
       const resolvido = resolvidoDaAna(7 * DIA + MINUTO);
-      const servico = fabricar({ chamados: [resolvido] });
+      const servico = await fabricar({ chamados: [resolvido] });
 
       const resultado = await servico.complementar(
         complementoConfirmadoDaAna(RASCUNHO_1, resolvido.id, texto),
@@ -96,7 +94,7 @@ export function cenariosDeComplemento(fabricar: Fabrica): void {
     });
 
     it("repetir o mesmo complemento não o duplica", async () => {
-      const servico = comChamados();
+      const servico = await comChamados();
       const rascunho = complementoConfirmadoDaAna(RASCUNHO_1, incidenteDaAna.id, texto);
 
       const primeiro = await servico.complementar(rascunho, t1);
@@ -109,7 +107,7 @@ export function cenariosDeComplemento(fabricar: Fabrica): void {
     });
 
     it("o chamado de outra pessoa é tratado como inexistente e não é alterado", async () => {
-      const servico = comChamados();
+      const servico = await comChamados();
 
       const resultado = await servico.complementar(
         complementoConfirmadoDaAna(RASCUNHO_1, incidenteDoJoao.id, texto),
@@ -130,10 +128,9 @@ export function cenariosDeComplemento(fabricar: Fabrica): void {
       const inexistente = valorDe(lerTicketId("INC-99999"));
 
       expect(
-        await comChamados().complementar(
-          complementoConfirmadoDaAna(RASCUNHO_1, inexistente, texto),
-          t1,
-        ),
+        await (
+          await comChamados()
+        ).complementar(complementoConfirmadoDaAna(RASCUNHO_1, inexistente, texto), t1),
       ).toEqual({ ok: false, erro: { motivo: "nao_encontrado", id: inexistente } });
     });
   });
