@@ -76,3 +76,34 @@ export function complementarChamado(
     }),
   );
 }
+
+type DestinosPermitidos = {
+  aberto: "aguardando_analista" | "aprovado" | "resolvido";
+  aguardando_analista: "aberto" | "resolvido";
+  aprovado: "resolvido";
+  resolvido: never;
+};
+
+export type TransicaoDeStatus = {
+  [De in StatusDoChamado]: [DestinosPermitidos[De]] extends [never]
+    ? never
+    : { readonly de: De; readonly para: DestinosPermitidos[De] };
+}[StatusDoChamado];
+
+export type ErroDeConflitoDeStatus = {
+  readonly motivo: "status_mudou";
+  readonly id: TicketId;
+  readonly esperado: StatusDoChamado;
+  readonly atual: StatusDoChamado;
+};
+
+export function alterarStatusDoChamado(
+  chamado: Chamado,
+  { de, para }: TransicaoDeStatus,
+  agora: Date,
+): Resultado<Chamado, ErroDeConflitoDeStatus> {
+  if (chamado.status === para) return sucesso(chamado);
+  if (chamado.status !== de)
+    return falha({ motivo: "status_mudou", id: chamado.id, esperado: de, atual: chamado.status });
+  return sucesso(Object.freeze({ ...chamado, status: para, atualizadoEm: agora }));
+}

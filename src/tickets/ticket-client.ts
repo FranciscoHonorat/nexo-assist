@@ -1,4 +1,9 @@
-import type { Chamado, ErroDeReabertura } from "../domain/chamado.js";
+import type {
+  Chamado,
+  ErroDeConflitoDeStatus,
+  ErroDeReabertura,
+  TransicaoDeStatus,
+} from "../domain/chamado.js";
 import type { Complemento, NovoChamado, Rascunho } from "../domain/rascunho.js";
 import type { Resultado } from "../domain/resultado.js";
 import type { TicketId } from "../domain/ticket-id.js";
@@ -10,6 +15,8 @@ export type ErroDeConsulta = {
 };
 
 export type ErroDeComplementacao = ErroDeConsulta | ErroDeReabertura;
+
+export type ErroDeAlteracaoDeStatus = ErroDeConsulta | ErroDeConflitoDeStatus;
 
 export type EstadoInicial = {
   readonly chamados: readonly Chamado[];
@@ -23,4 +30,9 @@ export type TicketClient = {
     rascunho: Rascunho<"confirmado", Complemento>,
     agora: Date,
   ) => Promise<Resultado<Chamado, ErroDeComplementacao>>;
+  readonly alterarStatus: (
+    id: TicketId,
+    alteracao: TransicaoDeStatus & { readonly por: UserId },
+    agora: Date,
+  ) => Promise<Resultado<Chamado, ErroDeAlteracaoDeStatus>>;
 };

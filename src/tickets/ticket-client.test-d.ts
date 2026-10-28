@@ -1,10 +1,15 @@
 import { describe, expectTypeOf, it } from "vitest";
-import type { Chamado } from "../domain/chamado.js";
+import type { Chamado, TransicaoDeStatus } from "../domain/chamado.js";
 import type { Complemento, NovoChamado, Rascunho } from "../domain/rascunho.js";
 import type { Resultado } from "../domain/resultado.js";
 import type { TicketId } from "../domain/ticket-id.js";
 import type { UserId } from "../domain/user-id.js";
-import type { ErroDeComplementacao, ErroDeConsulta, TicketClient } from "./ticket-client.js";
+import type {
+  ErroDeAlteracaoDeStatus,
+  ErroDeComplementacao,
+  ErroDeConsulta,
+  TicketClient,
+} from "./ticket-client.js";
 
 declare const servico: TicketClient;
 declare const ana: UserId;
@@ -55,5 +60,49 @@ describe("TicketClient: garantias em tempo de compilação", () => {
     void servico.obter(id, "joao@nexo.com");
     // @ts-expect-error: texto cru não é TicketId
     void servico.obter("INC-20311", ana);
+  });
+
+  it("alterarStatus é condicional e pode falhar por privacidade ou por conflito", () => {
+    expectTypeOf(servico.alterarStatus).returns.toEqualTypeOf<
+      Promise<Resultado<Chamado, ErroDeAlteracaoDeStatus>>
+    >();
+    expectTypeOf<ErroDeAlteracaoDeStatus>().toEqualTypeOf<
+      | ErroDeConsulta
+      | {
+          readonly motivo: "status_mudou";
+          readonly id: TicketId;
+          readonly esperado: Chamado["status"];
+          readonly atual: Chamado["status"];
+        }
+    >();
+  });
+
+  it("só transições permitidas compilam", () => {
+    void servico.alterarStatus(id, { de: "aberto", para: "aguardando_analista", por: ana }, agora);
+    void servico.alterarStatus(
+      id,
+      { de: "aguardando_analista", para: "resolvido", por: ana },
+      agora,
+    );
+    void servico.alterarStatus(id, { de: "aprovado", para: "resolvido", por: ana }, agora);
+    // @ts-expect-error: reabrir só acontece complementando o chamado
+    void servico.alterarStatus(id, { de: "resolvido", para: "aberto", por: ana }, agora);
+    // @ts-expect-error: uma requisição aprovada não volta a ser aberta
+    void servico.alterarStatus(id, { de: "aprovado", para: "aberto", por: ana }, agora);
+    // @ts-expect-error: mudar para o mesmo status não é uma transição
+    void servico.alterarStatus(id, { de: "aberto", para: "aberto", por: ana }, agora);
+  });
+
+  it("as transições permitidas são exatamente as da tabela do service desk", () => {
+    expectTypeOf<TransicaoDeStatus>().toEqualTypeOf<
+      | { readonly de: "aberto"; readonly para: "aguardando_analista" | "aprovado" | "resolvido" }
+      | { readonly de: "aguardando_analista"; readonly para: "aberto" | "resolvido" }
+      | { readonly de: "aprovado"; readonly para: "resolvido" }
+    >();
+  });
+
+  it("quem altera é um UserId validado", () => {
+    // @ts-expect-error: e-mail cru, possivelmente escrito pelo LLM
+    void servico.alterarStatus(id, { de: "aberto", para: "resolvido", por: "ana@nexo.com" }, agora);
   });
 });

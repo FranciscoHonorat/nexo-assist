@@ -1,4 +1,4 @@
-import { complementarChamado, type Chamado } from "../domain/chamado.js";
+import { alterarStatusDoChamado, complementarChamado, type Chamado } from "../domain/chamado.js";
 import type { RascunhoId } from "../domain/rascunho-id.js";
 import type { Complemento, Rascunho } from "../domain/rascunho.js";
 import { falha, sucesso, type Resultado } from "../domain/resultado.js";
@@ -57,6 +57,15 @@ export function ticketClientEmMemoria({ chamados }: EstadoInicial): TicketClient
       const resultado = aplicarComplemento(porId.get(rascunho.conteudo.chamado), rascunho, agora);
       if (resultado.ok) porId.set(resultado.valor.id, resultado.valor);
       complementadosPorRascunho.set(rascunho.id, resultado);
+      return Promise.resolve(resultado);
+    },
+
+    alterarStatus: (id, alteracao, agora) => {
+      const chamado = porId.get(id);
+      if (chamado?.dono !== alteracao.por)
+        return Promise.resolve(falha({ motivo: "nao_encontrado", id }));
+      const resultado = alterarStatusDoChamado(chamado, alteracao, agora);
+      if (resultado.ok) porId.set(id, resultado.valor);
       return Promise.resolve(resultado);
     },
   };
