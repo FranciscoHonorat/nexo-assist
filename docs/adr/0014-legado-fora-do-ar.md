@@ -39,6 +39,33 @@ o que o Anexo A proíbe.
    400–800 ms). O pior caso soma 1,4 s, dentro dos "alguns segundos" do PRD. O cliente
    resiliente passa no mesmo contrato das outras implementações.
 
+## O que conta como infraestrutura
+
+Vale para o legado e também para o PostgreSQL ([ADR-0004](0004-postgres-com-drizzle.md)). Um erro
+vira `indisponivel` se **algum erro da cadeia de `cause`** for:
+
+| Tipo                                  | Exemplos                                                               |
+| ------------------------------------- | ---------------------------------------------------------------------- |
+| Erro de rede do Node                  | `ECONNREFUSED`, `ECONNRESET`, `ETIMEDOUT`, `EPIPE`, `ENOTFOUND`        |
+| SQLSTATE de conexão do PostgreSQL     | classe `08`, `57P01`–`57P03` (servidor desligando), `53300`            |
+| Mensagem de conexão encerrada do `pg` | `Connection terminated…`, `Client has encountered a connection error…` |
+
+Qualquer outro erro **continua sendo exceção**: violação de restrição, erro de SQL, um _pool_
+usado depois de encerrado. Tratar um bug como "tente de novo" esconderia o bug.
+
+A classificação foi escrita depois de **observar os erros reais**:
+
+- o Drizzle embrulha o erro do driver, então o código fica na `cause`, e a busca percorre a
+  cadeia, com proteção contra ciclos;
+- uma conexão derrubada pelo servidor chega **sem código**, só com a mensagem do `pg`. Por isso a
+  classificação também usa mensagens. Elas são do driver, e não do servidor, então não dependem do
+  idioma configurado no PostgreSQL. O risco é uma versão nova do `pg` mudar o texto, e os testes do
+  classificador pegariam isso.
+
+Os dois decoradores do `TicketClient` (a proteção contra quedas do PostgreSQL e o cliente
+resiliente) usam a mesma função, `envolverOperacoes`. Uma operação nova na interface não compila
+enquanto não for tratada ali.
+
 ## Opções consideradas
 
 ### Como representar a indisponibilidade

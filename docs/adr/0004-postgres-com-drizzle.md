@@ -106,6 +106,6 @@ dialeto (`pgTable` e `sqliteTable`), então trocar de banco depois não sai de g
 1. [x] `docker-compose.yml` com PostgreSQL.
 2. [x] Schema e primeira migration.
 3. [x] Fixture de teste com PGlite.
-4. [ ] Indisponibilidade do banco vira `indisponivel`.
+4. [x] Indisponibilidade do banco vira `indisponivel` ([ADR-0014](0014-legado-fora-do-ar.md)).
 5. [x] Testes de concorrência com PostgreSQL real, e a correção do `complementar`.
 6. [ ] Aplicar as migrations na inicialização em produção.
