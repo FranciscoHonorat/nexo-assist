@@ -1,3 +1,7 @@
+declare const relogioDeSaoPaulo: unique symbol;
+
+type InstanteEmSaoPaulo = number & { readonly [relogioDeSaoPaulo]: true };
+
 export type Prioridade = "critica" | "alta" | "media" | "baixa";
 
 const MINUTO = 60_000;
@@ -36,32 +40,57 @@ export function estaVencido(prioridade: Prioridade, desde: Date, agora: Date): b
 }
 
 function somarHorasUteis(desde: Date, horas: number): Date {
-  let local = desde.getTime() + DESLOCAMENTO_DE_SAO_PAULO;
-  let restante = horas * HORA;
-  for (;;) {
-    local = proximoInstanteUtil(local);
-    const fechamento = inicioDoDia(local) + FECHAMENTO;
-    const disponivel = fechamento - local;
-    if (restante <= disponivel) return new Date(local + restante - DESLOCAMENTO_DE_SAO_PAULO);
-    restante -= disponivel;
-    local = fechamento;
-  }
+  return deSaoPaulo(avancarNoExpediente(paraSaoPaulo(desde), horas * HORA));
 }
 
-function proximoInstanteUtil(local: number): number {
-  const dia = inicioDoDia(local);
-  if (ehDiaUtil(dia) && local < dia + ABERTURA) return dia + ABERTURA;
-  if (ehDiaUtil(dia) && local < dia + FECHAMENTO) return local;
-  let proximoDia = dia + DIA;
-  while (!ehDiaUtil(proximoDia)) proximoDia += DIA;
-  return proximoDia + ABERTURA;
+function avancarNoExpediente(instante: InstanteEmSaoPaulo, restante: number): InstanteEmSaoPaulo {
+  const inicio = proximoInstanteUtil(instante);
+  const fechamento = fechamentoDe(inicioDoDia(inicio));
+  const disponivel = fechamento - inicio;
+  if (restante <= disponivel) return avancar(inicio, restante);
+  return avancarNoExpediente(fechamento, restante - disponivel);
 }
 
-function inicioDoDia(local: number): number {
-  return Math.floor(local / DIA) * DIA;
+function proximoInstanteUtil(instante: InstanteEmSaoPaulo): InstanteEmSaoPaulo {
+  const dia = inicioDoDia(instante);
+  if (!ehDiaUtil(dia) || instante >= fechamentoDe(dia)) return aberturaDe(proximoDiaUtil(dia));
+  return instante < aberturaDe(dia) ? aberturaDe(dia) : instante;
 }
 
-function ehDiaUtil(inicioDoDia: number): boolean {
-  const diaDaSemana = new Date(inicioDoDia).getUTCDay();
+function proximoDiaUtil(dia: InstanteEmSaoPaulo): InstanteEmSaoPaulo {
+  const seguinte = avancar(dia, DIA);
+  return ehDiaUtil(seguinte) ? seguinte : proximoDiaUtil(seguinte);
+}
+
+function ehDiaUtil(dia: InstanteEmSaoPaulo): boolean {
+  const diaDaSemana = new Date(dia).getUTCDay();
   return diaDaSemana !== DOMINGO && diaDaSemana !== SABADO;
+}
+
+function inicioDoDia(instante: InstanteEmSaoPaulo): InstanteEmSaoPaulo {
+  return emSaoPaulo(Math.floor(instante / DIA) * DIA);
+}
+
+function aberturaDe(dia: InstanteEmSaoPaulo): InstanteEmSaoPaulo {
+  return avancar(dia, ABERTURA);
+}
+
+function fechamentoDe(dia: InstanteEmSaoPaulo): InstanteEmSaoPaulo {
+  return avancar(dia, FECHAMENTO);
+}
+
+function avancar(instante: InstanteEmSaoPaulo, duracao: number): InstanteEmSaoPaulo {
+  return emSaoPaulo(instante + duracao);
+}
+
+function paraSaoPaulo(data: Date): InstanteEmSaoPaulo {
+  return emSaoPaulo(data.getTime() + DESLOCAMENTO_DE_SAO_PAULO);
+}
+
+function deSaoPaulo(instante: InstanteEmSaoPaulo): Date {
+  return new Date(instante - DESLOCAMENTO_DE_SAO_PAULO);
+}
+
+function emSaoPaulo(milissegundos: number): InstanteEmSaoPaulo {
+  return milissegundos as InstanteEmSaoPaulo;
 }
