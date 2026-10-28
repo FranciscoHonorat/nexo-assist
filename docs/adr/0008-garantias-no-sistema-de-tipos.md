@@ -45,6 +45,11 @@ poucos pontos auditáveis:
   pelo compilador no tipo `SemMarca`.
 - `lerNoFormato` em `validado.ts`, que aplica a marca de validação depois de testar o formato.
 - `lerUserId` e `novoRascunhoId`, que têm regras próprias.
+- `lerConteudo` no rascunho, que afirma que validar um conteúdo preserva o seu tipo (`NovoChamado`
+  continua `NovoChamado`). Eliminá-la exigiria o padrão de uniões correlacionadas do TypeScript,
+  que só compila sem asserção quando o conteúdo é uma interseção (`{ tipo } & { dados }`).
+  Achatar a interseção para o formato de objeto quebra a correlação. Em 2026-10-28, com o
+  TypeScript 6.0.3, não foi possível ter as duas coisas, e a asserção de uma linha ficou.
 
 As garantias de tipo são testadas em arquivos `*.test-d.ts`, com `@ts-expect-error` como
 asserção: se o código passar a aceitar algo proibido, o teste falha.
