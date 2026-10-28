@@ -1,4 +1,4 @@
-import type { Chamado } from "../domain/chamado.js";
+import type { Chamado, ErroDeReabertura } from "../domain/chamado.js";
 import type { Complemento, NovoChamado, Rascunho } from "../domain/rascunho.js";
 import type { Resultado } from "../domain/resultado.js";
 import type { TicketId } from "../domain/ticket-id.js";
@@ -9,8 +9,7 @@ export type ErroDeConsulta = {
   readonly id: TicketId;
 };
 
-export type ErroDeComplementacao =
-  ErroDeConsulta | { readonly motivo: "resolvido_ha_mais_de_7_dias"; readonly id: TicketId };
+export type ErroDeComplementacao = ErroDeConsulta | ErroDeReabertura;
 
 export type EstadoInicial = {
   readonly chamados: readonly Chamado[];

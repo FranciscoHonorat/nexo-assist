@@ -4,6 +4,7 @@ import { lerRascunhoId } from "../domain/rascunho-id.js";
 import { confirmar, criarRascunho } from "../domain/rascunho.js";
 import { valorDe } from "../testes/valor-de.js";
 import { lerTicketId, tipoDoChamado, type TicketId } from "../domain/ticket-id.js";
+import { DIA, MINUTO } from "../domain/tempo.js";
 import { lerUserId, type UserId } from "../domain/user-id.js";
 import type { EstadoInicial, TicketClient } from "./ticket-client.js";
 
@@ -11,7 +12,6 @@ const ana = valorDe(lerUserId("ana@nexo.com"));
 const joao = valorDe(lerUserId("joao@nexo.com"));
 const t0 = new Date("2026-10-22T10:00:00Z");
 const t1 = new Date("2026-10-28T10:00:00Z");
-const DIA = 24 * 60 * 60 * 1000;
 const antesDeT1 = (milissegundos: number) => new Date(t1.getTime() - milissegundos);
 
 const notebookLento = {
@@ -242,7 +242,7 @@ export function verificarContratoDoTicketClient(
       });
 
       it("um chamado resolvido há mais de 7 dias não é reaberto nem alterado", async () => {
-        const resolvido = resolvidoDaAna(7 * DIA + 60_000);
+        const resolvido = resolvidoDaAna(7 * DIA + MINUTO);
         const servico = fabricar({ chamados: [resolvido] });
 
         const resultado = await servico.complementar(

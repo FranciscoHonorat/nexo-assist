@@ -1,4 +1,5 @@
 import { falha, sucesso, type Resultado } from "./resultado.js";
+import { DIA } from "./tempo.js";
 import type { Prioridade } from "./prazo.js";
 import type { TicketId, TipoChamado } from "./ticket-id.js";
 import type { UserId } from "./user-id.js";
@@ -45,4 +46,33 @@ export function lerDadosDoChamado(dados: DadosDoChamado): Resultado<DadosDoChama
   const campoVazio = CAMPOS_OBRIGATORIOS_DE_TEXTO.find((campo) => aparados[campo] === "");
   if (campoVazio) return falha({ motivo: "campo_vazio", campo: campoVazio });
   return sucesso(Object.freeze(aparados));
+}
+
+const PRAZO_DE_REABERTURA = 7 * DIA;
+
+export type ErroDeReabertura = {
+  readonly motivo: "resolvido_ha_mais_de_7_dias";
+  readonly id: TicketId;
+};
+
+type NovoComplemento = {
+  readonly texto: string;
+  readonly agora: Date;
+};
+
+export function complementarChamado(
+  chamado: Chamado,
+  { texto, agora }: NovoComplemento,
+): Resultado<Chamado, ErroDeReabertura> {
+  const resolvidoHa = agora.getTime() - chamado.atualizadoEm.getTime();
+  if (chamado.status === "resolvido" && resolvidoHa > PRAZO_DE_REABERTURA)
+    return falha({ motivo: "resolvido_ha_mais_de_7_dias", id: chamado.id });
+  return sucesso(
+    Object.freeze({
+      ...chamado,
+      status: chamado.status === "resolvido" ? "aberto" : chamado.status,
+      atualizadoEm: agora,
+      complementos: Object.freeze([...chamado.complementos, Object.freeze({ texto, em: agora })]),
+    }),
+  );
 }

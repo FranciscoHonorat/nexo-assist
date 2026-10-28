@@ -1,12 +1,11 @@
+import { DIA, HORA } from "./tempo.js";
+
 declare const relogioDeSaoPaulo: unique symbol;
 
 type InstanteEmSaoPaulo = number & { readonly [relogioDeSaoPaulo]: true };
 
 export type Prioridade = "critica" | "alta" | "media" | "baixa";
 
-const MINUTO = 60_000;
-const HORA = 60 * MINUTO;
-const DIA = 24 * HORA;
 const DESLOCAMENTO_DE_SAO_PAULO = -3 * HORA;
 const ABERTURA = 8 * HORA;
 const FECHAMENTO = 18 * HORA;

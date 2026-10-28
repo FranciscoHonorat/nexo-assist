@@ -1,4 +1,4 @@
-import type { Chamado } from "../domain/chamado.js";
+import { complementarChamado, type Chamado } from "../domain/chamado.js";
 import type { RascunhoId } from "../domain/rascunho-id.js";
 import type { Complemento, Rascunho } from "../domain/rascunho.js";
 import { falha, sucesso, type Resultado } from "../domain/resultado.js";
@@ -11,8 +11,6 @@ const PREFIXO_POR_TIPO = {
 } as const satisfies Record<TipoChamado, string>;
 
 const PRIMEIRO_NUMERO = 30000;
-const DIA = 24 * 60 * 60 * 1000;
-const PRAZO_DE_REABERTURA = 7 * DIA;
 
 export function ticketClientEmMemoria({ chamados }: EstadoInicial): TicketClient {
   const porId = new Map(chamados.map((chamado) => [chamado.id, chamado]));
@@ -69,22 +67,9 @@ function aplicarComplemento(
   rascunho: Rascunho<"confirmado", Complemento>,
   agora: Date,
 ): Resultado<Chamado, ErroDeComplementacao> {
-  const id = rascunho.conteudo.chamado;
-  if (chamado?.dono !== rascunho.dono) return falha({ motivo: "nao_encontrado", id });
-  const resolvidoHa = agora.getTime() - chamado.atualizadoEm.getTime();
-  if (chamado.status === "resolvido" && resolvidoHa > PRAZO_DE_REABERTURA)
-    return falha({ motivo: "resolvido_ha_mais_de_7_dias", id });
-  return sucesso(
-    Object.freeze({
-      ...chamado,
-      status: chamado.status === "resolvido" ? "aberto" : chamado.status,
-      atualizadoEm: agora,
-      complementos: Object.freeze([
-        ...chamado.complementos,
-        Object.freeze({ texto: rascunho.conteudo.texto, em: agora }),
-      ]),
-    }),
-  );
+  if (chamado?.dono !== rascunho.dono)
+    return falha({ motivo: "nao_encontrado", id: rascunho.conteudo.chamado });
+  return complementarChamado(chamado, { texto: rascunho.conteudo.texto, agora });
 }
 
 function montarId(tipo: TipoChamado, numero: number): TicketId {
