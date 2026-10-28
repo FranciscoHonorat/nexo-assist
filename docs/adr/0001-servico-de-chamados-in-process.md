@@ -71,4 +71,4 @@ Por ser nosso, o serviço também concentra duas regras: a **checagem de dono** 
 4. [x] Complementar chamado ([ADR-0012](0012-complemento-e-reabertura-de-chamados.md)).
 5. [x] Alterar status com transição condicional ([ADR-0013](0013-transicoes-de-status-do-chamado.md)).
 6. [x] Falhas injetáveis na versão simulada ([ADR-0014](0014-legado-fora-do-ar.md)).
-7. [ ] Adicionar a regra de import no ESLint.
+7. [x] Adicionar a regra de import no ESLint ([ADR-0015](0015-fronteiras-verificadas-pelo-lint.md)).

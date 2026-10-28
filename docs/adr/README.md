@@ -20,7 +20,7 @@ de alteração de status.
 
 | ADR                                                  | Decisão                                                        | Status | Implementação |
 | ---------------------------------------------------- | -------------------------------------------------------------- | ------ | ------------- |
-| [0001](0001-servico-de-chamados-in-process.md)       | Serviço de chamados no mesmo processo, atrás de interface      | Aceito | Em andamento  |
+| [0001](0001-servico-de-chamados-in-process.md)       | Serviço de chamados no mesmo processo, atrás de interface      | Aceito | Feito         |
 | [0002](0002-tempo-real-com-sse.md)                   | Tempo real com SSE e EventEmitter; banco como fonte da verdade | Aceito | Pendente      |
 | [0003](0003-saida-do-agent-via-tool.md)              | Toda saída do agent passa pela tool `responder`                | Aceito | Pendente      |
 | [0004](0004-postgres-com-drizzle.md)                 | PostgreSQL com Drizzle; PGlite nos testes                      | Aceito | Pendente      |
@@ -34,3 +34,4 @@ de alteração de status.
 | [0012](0012-complemento-e-reabertura-de-chamados.md) | Complemento e reabertura de chamados                           | Aceito | Feito         |
 | [0013](0013-transicoes-de-status-do-chamado.md)      | Transições de status do chamado                                | Aceito | Feito         |
 | [0014](0014-legado-fora-do-ar.md)                    | Legado fora do ar                                              | Aceito | Feito         |
+| [0015](0015-fronteiras-verificadas-pelo-lint.md)     | Fronteiras verificadas pelo lint                               | Aceito | Feito         |
