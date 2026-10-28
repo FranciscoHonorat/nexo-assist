@@ -65,7 +65,9 @@ Por ser nosso, o serviço também concentra duas regras: a **checagem de dono** 
 
 ## Itens de ação
 
-1. [ ] Definir a interface `TicketClient`.
-2. [ ] Escrever a suíte de contrato.
-3. [ ] Implementar a versão simulada, com falhas injetáveis.
-4. [ ] Adicionar a regra de import no ESLint.
+1. [x] Definir a interface `TicketClient`.
+2. [x] Escrever a suíte de contrato.
+3. [x] Implementar a versão simulada (listar, obter e criar).
+4. [ ] Complementar chamado e alterar status.
+5. [ ] Falhas injetáveis na versão simulada.
+6. [ ] Adicionar a regra de import no ESLint.

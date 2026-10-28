@@ -58,4 +58,4 @@ com o primeiro incremento de domínio, e não num commit separado.
 
 1. [x] Configurar tsc, ESLint, Prettier, Vitest, commitlint e lefthook.
 2. [x] Workflow de CI.
-3. [ ] Primeira execução real do CI, após configurar o remote.
+3. [x] Primeira execução real do CI, após configurar o remote (2026-10-28, verde em 34s).
