@@ -18,16 +18,17 @@ de alteração de status.
 
 ## Índice
 
-| ADR                                                | Decisão                                                        | Status | Implementação |
-| -------------------------------------------------- | -------------------------------------------------------------- | ------ | ------------- |
-| [0001](0001-servico-de-chamados-in-process.md)     | Serviço de chamados no mesmo processo, atrás de interface      | Aceito | Em andamento  |
-| [0002](0002-tempo-real-com-sse.md)                 | Tempo real com SSE e EventEmitter; banco como fonte da verdade | Aceito | Pendente      |
-| [0003](0003-saida-do-agent-via-tool.md)            | Toda saída do agent passa pela tool `responder`                | Aceito | Pendente      |
-| [0004](0004-postgres-com-drizzle.md)               | PostgreSQL com Drizzle; PGlite nos testes                      | Aceito | Pendente      |
-| [0005](0005-mastra-minimo.md)                      | Mastra em uso mínimo, contido atrás de `AgentStep`             | Aceito | Pendente      |
-| [0006](0006-modelo-de-llm.md)                      | Claude Haiku 5.5 como ponto de partida                         | Aceito | Pendente      |
-| [0007](0007-esteira-de-qualidade.md)               | Esteira de qualidade local e no CI; versões fixas              | Aceito | Feito         |
-| [0008](0008-garantias-no-sistema-de-tipos.md)      | Garantias no sistema de tipos; `Resultado` em vez de exceções  | Aceito | Feito         |
-| [0009](0009-codigo-sem-comentarios.md)             | Código sem comentários                                         | Aceito | Feito         |
-| [0010](0010-formato-dos-ids.md)                    | Formato dos ids de chamado, usuário e rascunho                 | Aceito | Feito         |
-| [0011](0011-prazos-em-horas-uteis-de-sao-paulo.md) | Prazos em horas úteis no horário de São Paulo                  | Aceito | Feito         |
+| ADR                                                  | Decisão                                                        | Status | Implementação |
+| ---------------------------------------------------- | -------------------------------------------------------------- | ------ | ------------- |
+| [0001](0001-servico-de-chamados-in-process.md)       | Serviço de chamados no mesmo processo, atrás de interface      | Aceito | Em andamento  |
+| [0002](0002-tempo-real-com-sse.md)                   | Tempo real com SSE e EventEmitter; banco como fonte da verdade | Aceito | Pendente      |
+| [0003](0003-saida-do-agent-via-tool.md)              | Toda saída do agent passa pela tool `responder`                | Aceito | Pendente      |
+| [0004](0004-postgres-com-drizzle.md)                 | PostgreSQL com Drizzle; PGlite nos testes                      | Aceito | Pendente      |
+| [0005](0005-mastra-minimo.md)                        | Mastra em uso mínimo, contido atrás de `AgentStep`             | Aceito | Pendente      |
+| [0006](0006-modelo-de-llm.md)                        | Claude Haiku 5.5 como ponto de partida                         | Aceito | Pendente      |
+| [0007](0007-esteira-de-qualidade.md)                 | Esteira de qualidade local e no CI; versões fixas              | Aceito | Feito         |
+| [0008](0008-garantias-no-sistema-de-tipos.md)        | Garantias no sistema de tipos; `Resultado` em vez de exceções  | Aceito | Feito         |
+| [0009](0009-codigo-sem-comentarios.md)               | Código sem comentários                                         | Aceito | Feito         |
+| [0010](0010-formato-dos-ids.md)                      | Formato dos ids de chamado, usuário e rascunho                 | Aceito | Feito         |
+| [0011](0011-prazos-em-horas-uteis-de-sao-paulo.md)   | Prazos em horas úteis no horário de São Paulo                  | Aceito | Feito         |
+| [0012](0012-complemento-e-reabertura-de-chamados.md) | Complemento e reabertura de chamados                           | Aceito | Feito         |
