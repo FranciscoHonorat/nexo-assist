@@ -1,7 +1,8 @@
 import { describe, expectTypeOf, it } from "vitest";
-import type { Afetados, Categoria, DadosDoChamado } from "./chamado.js";
+import type { Afetados, Categoria, Chamado, DadosDoChamado, StatusDoChamado } from "./chamado.js";
 import type { Prioridade } from "./prazo.js";
-import type { TipoChamado } from "./ticket-id.js";
+import type { TicketId, TipoChamado } from "./ticket-id.js";
+import type { UserId } from "./user-id.js";
 
 describe("DadosDoChamado: regras do Anexo A em tipos", () => {
   it("as categorias são as do service desk", () => {
@@ -22,6 +23,25 @@ describe("DadosDoChamado: regras do Anexo A em tipos", () => {
       readonly categoria: Categoria;
       readonly prioridade: Prioridade;
       readonly afetados: Afetados;
+    }>();
+  });
+});
+
+describe("Chamado: o que existe no serviço de chamados", () => {
+  it("os status seguem o ciclo de vida do service desk", () => {
+    expectTypeOf<StatusDoChamado>().toEqualTypeOf<
+      "aberto" | "aguardando_analista" | "aprovado" | "resolvido"
+    >();
+  });
+
+  it("um chamado tem id validado, dono, dados, status e horários", () => {
+    expectTypeOf<Chamado>().toEqualTypeOf<{
+      readonly id: TicketId;
+      readonly dono: UserId;
+      readonly dados: DadosDoChamado;
+      readonly status: StatusDoChamado;
+      readonly criadoEm: Date;
+      readonly atualizadoEm: Date;
     }>();
   });
 });

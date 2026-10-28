@@ -1,6 +1,7 @@
 import { falha, sucesso, type Resultado } from "./resultado.js";
 import type { Prioridade } from "./prazo.js";
-import type { TipoChamado } from "./ticket-id.js";
+import type { TicketId, TipoChamado } from "./ticket-id.js";
+import type { UserId } from "./user-id.js";
 
 export type Categoria = "acesso" | "rede_e_vpn" | "hardware" | "software" | "email" | "outros";
 
@@ -13,6 +14,17 @@ export type DadosDoChamado = {
   readonly categoria: Categoria;
   readonly prioridade: Prioridade;
   readonly afetados: Afetados;
+};
+
+export type StatusDoChamado = "aberto" | "aguardando_analista" | "aprovado" | "resolvido";
+
+export type Chamado = {
+  readonly id: TicketId;
+  readonly dono: UserId;
+  readonly dados: DadosDoChamado;
+  readonly status: StatusDoChamado;
+  readonly criadoEm: Date;
+  readonly atualizadoEm: Date;
 };
 
 const CAMPOS_OBRIGATORIOS_DE_TEXTO = ["titulo", "descricao"] as const;
