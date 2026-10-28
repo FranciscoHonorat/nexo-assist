@@ -60,4 +60,5 @@ asserção: se o código passar a aceitar algo proibido, o teste falha.
 
 1. [x] `Resultado`, `Validado`, `TicketId`, `UserId`, `RascunhoId`.
 2. [x] `Rascunho` com dono e transições permitidas só ao dono.
-3. [ ] Máquina de estados da conversa com transições verificadas no tipo.
+3. [x] Máquina de estados da conversa com transições verificadas no tipo.
+4. [x] `InstanteEmSaoPaulo` para separar horário local de UTC ([ADR-0011](0011-prazos-em-horas-uteis-de-sao-paulo.md)).
