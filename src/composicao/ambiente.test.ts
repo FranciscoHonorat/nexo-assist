@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { lerAmbiente } from "./ambiente.js";
+import { enderecoDoBanco, lerAmbiente } from "./ambiente.js";
 
 const VALIDO = {
   DATABASE_URL: "postgres://nexo:nexo@localhost:5433/nexo",
@@ -70,5 +70,17 @@ describe("Ambiente lido no boot", () => {
     const lido = lerAmbiente({ ...VALIDO, LLM_EFFORT: "sk-ant-vazou" });
 
     expect(JSON.stringify(lido)).not.toContain("sk-ant");
+  });
+});
+
+describe("Endereço do banco nas mensagens de erro", () => {
+  it("mostra o host, a porta e o banco, nunca o usuário nem a senha", () => {
+    expect(enderecoDoBanco("postgres://nexo:senha-secreta@localhost:5433/nexo")).toBe(
+      "localhost:5433/nexo",
+    );
+  });
+
+  it("uma URL que não se lê não aparece no log", () => {
+    expect(enderecoDoBanco("isso não é uma url senha-secreta")).toBe("(URL inválida)");
   });
 });

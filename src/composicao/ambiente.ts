@@ -51,3 +51,9 @@ export function lerAmbiente(
   const invalidas = new Set(lido.error.issues.map(({ path }) => String(path[0])));
   return falha({ motivo: "variaveis_invalidas", variaveis: [...invalidas] });
 }
+
+export function enderecoDoBanco(url: string): string {
+  if (!URL.canParse(url)) return "(URL inválida)";
+  const { host, pathname } = new URL(url);
+  return `${host}${pathname}`;
+}
