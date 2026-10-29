@@ -23,3 +23,7 @@ export function lerNoFormato<Id extends Validado<string, string>>(
     return falha({ motivo: "formato_invalido", recebido: texto });
   return sucesso(normalizado as Id);
 }
+
+export type MarcaDeValidacao = { readonly [lidoEValidado]: string };
+
+export type SemValidacao<T> = T extends MarcaDeValidacao ? (T extends string ? string : number) : T;
