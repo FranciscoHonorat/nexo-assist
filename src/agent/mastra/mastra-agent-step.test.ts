@@ -2,7 +2,7 @@ import { MockLanguageModelV4 } from "ai/test";
 import { describe, expect, it } from "vitest";
 import type { ContextoDoPasso } from "../agent-step.js";
 import { requisicaoDaAna } from "../../tickets/contrato/fixtures.js";
-import { mastraAgentStep } from "./mastra-agent-step.js";
+import { LIMITE_DE_TOKENS_DE_SAIDA, mastraAgentStep } from "./mastra-agent-step.js";
 
 type Conteudo = Record<string, unknown>;
 
@@ -309,6 +309,14 @@ describe("MastraAgentStep: o histórico do turno volta exato para o modelo", () 
     expect(JSON.stringify(prompt[1])).toContain("meu notebook está lento");
     expect(JSON.stringify(prompt[2])).toContain("Desde quando?");
     expect(JSON.stringify(prompt[3])).toContain("e o INC-20311?");
+  });
+
+  it("Dado qualquer pedido, Então o modelo recebe um teto de tokens de saída, para o custo por turno ter limite", async () => {
+    const modelo = modeloQueResponde({ conteudo: [{ type: "text", text: "Olá!" }] });
+
+    await passo(modelo).decidir(contexto);
+
+    expect(modelo.doGenerateCalls[0]?.maxOutputTokens).toBe(LIMITE_DE_TOKENS_DE_SAIDA);
   });
 
   it("Dado mensagens do analista e eventos do sistema, Então o analista fala como o service desk e o evento chega marcado como aviso do sistema", async () => {

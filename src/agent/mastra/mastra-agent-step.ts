@@ -157,6 +157,8 @@ export const NOMES_DAS_TOOLS = Object.keys(TOOLS);
 
 type Resposta = Awaited<ReturnType<Agent["generate"]>>;
 
+export const LIMITE_DE_TOKENS_DE_SAIDA = 4096;
+
 export function mastraAgentStep({ modelo, instrucoes, esforco }: ConfiguracaoDoMastra): AgentStep {
   const agent = new Agent({
     id: "nexo-assist",
@@ -183,6 +185,7 @@ export function mastraAgentStep({ modelo, instrucoes, esforco }: ConfiguracaoDoM
             clientTools: TOOLS,
             toolChoice: "auto",
             providerOptions: { anthropic: { effort: esforco } },
+            modelSettings: { maxOutputTokens: LIMITE_DE_TOKENS_DE_SAIDA },
           });
           historico = [...historico, ...mensagensDoModelo(resposta)];
           return paraDecisao(resposta);

@@ -2,6 +2,7 @@ import type {
   AgentStep,
   SessaoDoModelo,
   Confianca,
+  Decisao,
   DecisaoFinal,
   Declaracao,
   PedidoDeTransferencia,
@@ -24,6 +25,9 @@ export const LIMITE_DE_ITERACOES = 5;
 export const RESPOSTA_DO_LIMITE_DE_ITERACOES =
   "Não consegui concluir seu pedido agora. Se quiser, posso chamar um analista para te ajudar.";
 
+export const RESPOSTA_DO_MODELO_INDISPONIVEL =
+  "Estou com uma instabilidade e não consegui responder agora. Tente de novo em instantes, ou peça para eu chamar um analista.";
+
 export const RESPOSTA_DA_RECUSA =
   "Não consigo ajudar com esse pedido por aqui. Se for um assunto de TI, posso chamar um analista para você.";
 
@@ -35,7 +39,12 @@ export const RESUMO_SEM_DETALHES = "O funcionário pediu um analista; veja a con
 export type PassoDaResposta = {
   readonly etapa: "resposta";
   readonly resultado:
-    "nao_declarou" | "declaracao_invalida" | "limite_de_iteracoes" | "recusada" | "transferiu";
+    | "nao_declarou"
+    | "declaracao_invalida"
+    | "limite_de_iteracoes"
+    | "recusada"
+    | "transferiu"
+    | "modelo_indisponivel";
   readonly detalhe: string;
 };
 
@@ -96,12 +105,17 @@ async function decidirAteResponder(
   andamento: Andamento,
 ): Promise<RespostaDoTurno> {
   const { turno, modelo, servicos } = execucao;
-  const decisao = await modelo.decidir({
-    mensagem: turno.mensagem,
-    anteriores: turno.anteriores,
-    chamadosVencidos: turno.chamadosVencidos,
-    resultadosDeTools: andamento.resultadosDeTools,
-  });
+  let decisao: Decisao;
+  try {
+    decisao = await modelo.decidir({
+      mensagem: turno.mensagem,
+      anteriores: turno.anteriores,
+      chamadosVencidos: turno.chamadosVencidos,
+      resultadosDeTools: andamento.resultadosDeTools,
+    });
+  } catch (erro) {
+    return concluir(andamento, modeloIndisponivel(erro), null);
+  }
   const chamadasAoModelo = andamento.chamadasAoModelo + 1;
 
   if (decisao.tipo !== "tools") {
@@ -179,6 +193,15 @@ function traduzirDecisao(decisao: DecisaoFinal, turno: TurnoPronto): Conclusao {
     case "recusa":
       return CONCLUSAO_DA_RECUSA;
   }
+}
+
+function modeloIndisponivel(erro: unknown): Conclusao {
+  const nome = erro instanceof Error ? erro.name : "erro desconhecido";
+  return semDeclaracao(
+    RESPOSTA_DO_MODELO_INDISPONIVEL,
+    "modelo_indisponivel",
+    `a chamada ao modelo falhou (${nome})`,
+  );
 }
 
 function resumoParaOAnalista(doModelo: string, doFuncionario: string): string {

@@ -19,6 +19,7 @@ import {
   RESUMO_SEM_DETALHES,
   SEM_ANEXOS,
   RESPOSTA_DO_LIMITE_DE_ITERACOES,
+  RESPOSTA_DO_MODELO_INDISPONIVEL,
 } from "./turno.js";
 
 describe("Turno do agent: toda saída passa pela tool responder", () => {
@@ -399,6 +400,41 @@ describe("Transferência: o modelo decide chamar um analista, o código garante 
     const modelo = agentStepRoteirizado([responde("Bom dia!")]);
 
     expect((await executarTurno(turno, modelo, servicos)).transferencia).toBeNull();
+  });
+});
+
+describe("Modelo fora do ar: o turno termina com uma resposta fixa, e a pergunta não se perde", () => {
+  it("Dado que a chamada ao modelo falha depois de uma tool, Então a resposta é fixa, com confiança baixa, e o trace guarda a tool e o nome do erro, sem a mensagem", async () => {
+    const { turno, servicos } = await cenarioDaAna("e meus chamados?", [incidenteDaAna]);
+    const modelo = {
+      iniciarTurno: () => {
+        let chamadas = 0;
+        return {
+          decidir: () => {
+            chamadas += 1;
+            if (chamadas === 1) return Promise.resolve(chamaTools({ tool: "consultar_chamados" }));
+            return Promise.reject(new TypeError("401 invalid x-api-key sk-ant-vazou"));
+          },
+        };
+      },
+    };
+
+    const resposta = await executarTurno(turno, modelo, servicos);
+
+    expect(resposta).toMatchObject({
+      mensagem: RESPOSTA_DO_MODELO_INDISPONIVEL,
+      declaracao: null,
+      confianca: "baixa",
+    });
+    expect(resposta.trace.slice(-2)).toMatchObject([
+      { etapa: "tool", nome: "consultar_chamados" },
+      {
+        etapa: "resposta",
+        resultado: "modelo_indisponivel",
+        detalhe: "a chamada ao modelo falhou (TypeError)",
+      },
+    ]);
+    expect(JSON.stringify(resposta)).not.toContain("sk-ant");
   });
 });
 
