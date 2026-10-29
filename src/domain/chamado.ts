@@ -4,9 +4,20 @@ import type { Prioridade } from "./prazo.js";
 import type { TicketId, TipoChamado } from "./ticket-id.js";
 import type { UserId } from "./user-id.js";
 
-export type Categoria = "acesso" | "rede_e_vpn" | "hardware" | "software" | "email" | "outros";
+export const CATEGORIAS = [
+  "acesso",
+  "rede_e_vpn",
+  "hardware",
+  "software",
+  "email",
+  "outros",
+] as const;
 
-export type Afetados = "so_eu" | "minha_equipe" | "empresa";
+export type Categoria = (typeof CATEGORIAS)[number];
+
+export const AFETADOS = ["so_eu", "minha_equipe", "empresa"] as const;
+
+export type Afetados = (typeof AFETADOS)[number];
 
 export type DadosDoChamado = {
   readonly titulo: string;
@@ -60,12 +71,32 @@ type NovoComplemento = {
   readonly agora: Date;
 };
 
+export function podeSerAtualizado(chamado: Chamado, agora: Date): boolean {
+  const resolvidoHa = agora.getTime() - chamado.atualizadoEm.getTime();
+  return chamado.status !== "resolvido" || resolvidoHa <= PRAZO_DE_REABERTURA;
+}
+
+export type ErroDePrioridade = {
+  readonly motivo: "prioridade_incompativel";
+  readonly prioridade: Prioridade;
+  readonly afetados: Afetados;
+};
+
+export function lerPrioridade({
+  prioridade,
+  afetados,
+}: Pick<DadosDoChamado, "prioridade" | "afetados">): Resultado<Prioridade, ErroDePrioridade> {
+  if (prioridade === "critica" && afetados === "so_eu") {
+    return falha({ motivo: "prioridade_incompativel", prioridade, afetados });
+  }
+  return sucesso(prioridade);
+}
+
 export function complementarChamado(
   chamado: Chamado,
   { texto, agora }: NovoComplemento,
 ): Resultado<Chamado, ErroDeReabertura> {
-  const resolvidoHa = agora.getTime() - chamado.atualizadoEm.getTime();
-  if (chamado.status === "resolvido" && resolvidoHa > PRAZO_DE_REABERTURA)
+  if (!podeSerAtualizado(chamado, agora))
     return falha({ motivo: "resolvido_ha_mais_de_7_dias", id: chamado.id });
   return sucesso(
     Object.freeze({

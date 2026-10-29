@@ -112,6 +112,17 @@ export function descartar<C extends ConteudoDoRascunho>(
   );
 }
 
+export type PorConteudo<R> = {
+  readonly [T in ConteudoDoRascunho["tipo"]]: (
+    confirmado: Rascunho<"confirmado", ConteudoDoTipo<T>>,
+  ) => R;
+};
+
+export function conformeOConteudo<R>(confirmado: Rascunho<"confirmado">, ramos: PorConteudo<R>): R {
+  const ramo = ramos[confirmado.conteudo.tipo] as (confirmado: Rascunho<"confirmado">) => R;
+  return ramo(confirmado);
+}
+
 function lerConteudo<C extends ConteudoDoRascunho>(
   conteudo: C,
 ): Resultado<ConteudoDoTipo<C["tipo"]>, ErroDeConteudo> {

@@ -9,7 +9,12 @@ const TIPO_POR_PREFIXO = {
 type TipoPorPrefixo = typeof TIPO_POR_PREFIXO;
 type Prefixo = keyof TipoPorPrefixo;
 
-export type TipoChamado = TipoPorPrefixo[Prefixo];
+export const TIPOS_DE_CHAMADO = [
+  "incidente",
+  "requisicao",
+] as const satisfies readonly TipoPorPrefixo[Prefixo][];
+
+export type TipoChamado = (typeof TIPOS_DE_CHAMADO)[number];
 
 export type TicketId<P extends Prefixo = Prefixo> = Validado<
   `${P}${typeof SEPARADOR}${number}`,

@@ -1,8 +1,14 @@
 import { falha, sucesso, type Resultado } from "./resultado.js";
 import type { UserId } from "./user-id.js";
 
-export type MotivoDeTransferencia =
-  "pedido_do_funcionario" | "caso_critico" | "chamado_vencido" | "baixa_confianca";
+export const MOTIVOS_DE_TRANSFERENCIA = [
+  "pedido_do_funcionario",
+  "caso_critico",
+  "chamado_vencido",
+  "baixa_confianca",
+] as const;
+
+export type MotivoDeTransferencia = (typeof MOTIVOS_DE_TRANSFERENCIA)[number];
 
 export type Desfecho = "devolvida" | "encerrada";
 

@@ -2,6 +2,7 @@ import { describe, expectTypeOf, it } from "vitest";
 import type { DadosDoChamado } from "./chamado.js";
 import type { RascunhoId } from "./rascunho-id.js";
 import {
+  conformeOConteudo,
   confirmar,
   criarRascunho,
   descartar,
@@ -23,6 +24,7 @@ declare const ana: UserId;
 declare const dados: DadosDoChamado;
 declare const inc20311: TicketId;
 declare const agora: Date;
+declare const confirmado: Rascunho<"confirmado">;
 declare const pendente: Rascunho<"pendente", NovoChamado>;
 declare const pendenteDeComplemento: Rascunho<"pendente", Complemento>;
 
@@ -156,5 +158,25 @@ describe("Rascunho: garantias em tempo de compilação", () => {
     expectTypeOf<Rascunho<"confirmado", NovoChamado>>().toHaveProperty("confirmadoEm");
     expectTypeOf<Rascunho<"pendente", NovoChamado>>().not.toHaveProperty("confirmadoEm");
     expectTypeOf<Rascunho<"descartado", NovoChamado>>().toHaveProperty("descartadoEm");
+  });
+
+  it("conformeOConteudo exige um ramo para cada tipo de conteúdo, e cada ramo recebe o rascunho estreitado", () => {
+    conformeOConteudo(confirmado, {
+      novo_chamado: (novo) => {
+        criarChamado(novo);
+      },
+      complemento: (complemento) => {
+        complementarChamado(complemento);
+      },
+    });
+
+    // @ts-expect-error: falta o ramo do complemento
+    conformeOConteudo(confirmado, { novo_chamado: criarChamado });
+
+    conformeOConteudo(confirmado, {
+      // @ts-expect-error: o ramo do chamado novo não recebe um complemento
+      novo_chamado: complementarChamado,
+      complemento: complementarChamado,
+    });
   });
 });

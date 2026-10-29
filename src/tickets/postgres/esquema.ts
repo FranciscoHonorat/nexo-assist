@@ -1,9 +1,9 @@
 import { sql } from "drizzle-orm";
 import { check, pgEnum, pgSequence, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
-import type { Afetados, Categoria, StatusDoChamado } from "../../domain/chamado.js";
-import type { Prioridade } from "../../domain/prazo.js";
+import { AFETADOS, CATEGORIAS, type StatusDoChamado } from "../../domain/chamado.js";
+import { PRIORIDADES } from "../../domain/prazo.js";
 import type { RascunhoId } from "../../domain/rascunho-id.js";
-import type { TicketId, TipoChamado } from "../../domain/ticket-id.js";
+import { TIPOS_DE_CHAMADO, type TicketId, type TipoChamado } from "../../domain/ticket-id.js";
 import type { UserId } from "../../domain/user-id.js";
 
 export const statusDoChamado = pgEnum("status_do_chamado", [
@@ -13,32 +13,13 @@ export const statusDoChamado = pgEnum("status_do_chamado", [
   "resolvido",
 ] as const satisfies readonly StatusDoChamado[]);
 
-export const tipoDoChamado = pgEnum("tipo_do_chamado", [
-  "incidente",
-  "requisicao",
-] as const satisfies readonly TipoChamado[]);
+export const tipoDoChamado = pgEnum("tipo_do_chamado", TIPOS_DE_CHAMADO);
 
-export const categoria = pgEnum("categoria", [
-  "acesso",
-  "rede_e_vpn",
-  "hardware",
-  "software",
-  "email",
-  "outros",
-] as const satisfies readonly Categoria[]);
+export const categoria = pgEnum("categoria", CATEGORIAS);
 
-export const prioridade = pgEnum("prioridade", [
-  "critica",
-  "alta",
-  "media",
-  "baixa",
-] as const satisfies readonly Prioridade[]);
+export const prioridade = pgEnum("prioridade", PRIORIDADES);
 
-export const afetados = pgEnum("afetados", [
-  "so_eu",
-  "minha_equipe",
-  "empresa",
-] as const satisfies readonly Afetados[]);
+export const afetados = pgEnum("afetados", AFETADOS);
 
 const NUMERACAO = { startWith: 30000, maxValue: 999_999_999 };
 

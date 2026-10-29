@@ -4,7 +4,9 @@ declare const relogioDeSaoPaulo: unique symbol;
 
 type InstanteEmSaoPaulo = number & { readonly [relogioDeSaoPaulo]: true };
 
-export type Prioridade = "critica" | "alta" | "media" | "baixa";
+export const PRIORIDADES = ["critica", "alta", "media", "baixa"] as const;
+
+export type Prioridade = (typeof PRIORIDADES)[number];
 
 const DESLOCAMENTO_DE_SAO_PAULO = -3 * HORA;
 const ABERTURA = 8 * HORA;
