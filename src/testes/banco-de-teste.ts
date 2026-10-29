@@ -22,6 +22,12 @@ async function criarEMigrar(): Promise<BancoMigrado> {
   return { pglite, db };
 }
 
+export const TEMPO_PARA_MIGRAR = 60_000;
+
+export async function migrarBancoDeTeste(): Promise<void> {
+  await (migrado ??= criarEMigrar());
+}
+
 export async function bancoDeTeste(inicial: EstadoInicial): Promise<TicketClient> {
   const { pglite, db } = await (migrado ??= criarEMigrar());
   return prepararBanco(db, (comandos) => pglite.exec(comandos), inicial);
