@@ -37,3 +37,4 @@ de alteração de status.
 | [0015](0015-fronteiras-verificadas-pelo-lint.md)     | Fronteiras verificadas pelo lint                                 | Aceito | Feito         |
 | [0016](0016-guardas-do-turno.md)                     | Guardas do turno antes do LLM, com marca e trace                 | Aceito | Feito         |
 | [0017](0017-loop-de-tools-no-codigo.md)              | Loop de tools no código, com o modelo decidindo um passo por vez | Aceito | Em andamento  |
+| [0018](0018-persistencia-das-conversas.md)           | Persistência das conversas, com controle e turno condicionais    | Aceito | Feito         |

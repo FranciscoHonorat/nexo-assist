@@ -87,4 +87,5 @@ que não é dele. Uma lista configurável de guardas abriria espaço para trocar
 1. [x] Guardas de controle, limite e vencidos.
 2. [x] O loop do agent (`executarTurno`) aceita só `TurnoPronto`
        ([ADR-0017](0017-loop-de-tools-no-codigo.md)).
-3. [ ] `mensagensNaSessao` lido das conversas persistidas (passo 7c).
+3. [x] `mensagensNaSessao` lido das conversas persistidas
+       ([ADR-0018](0018-persistencia-das-conversas.md)).
