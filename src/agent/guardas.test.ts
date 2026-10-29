@@ -69,7 +69,8 @@ describe("Guarda de controle: o agent só fala quando a conversa é dele", () =>
         motivo: "conversa_na_fila",
         trace: [
           {
-            guarda: "controle",
+            etapa: "guarda",
+            nome: "controle",
             resultado: "interrompeu",
             detalhe: "conversa aguardando um analista",
           },
@@ -88,7 +89,8 @@ describe("Guarda de controle: o agent só fala quando a conversa é dele", () =>
         motivo: "conversa_com_analista",
         trace: [
           {
-            guarda: "controle",
+            etapa: "guarda",
+            nome: "controle",
             resultado: "interrompeu",
             detalhe: "conversa com bruno.n1@nexo.com",
           },
@@ -106,7 +108,8 @@ describe("Guarda de limite: no máximo 30 mensagens por sessão", () => {
     const turno = valorDe(await prepararTurno(entrada(comAgent, 29), cliente));
 
     expect(turno.trace).toContainEqual({
-      guarda: "limite",
+      etapa: "guarda",
+      nome: "limite",
       resultado: "passou",
       detalhe: "30 de 30 mensagens",
     });
@@ -121,8 +124,18 @@ describe("Guarda de limite: no máximo 30 mensagens por sessão", () => {
         motivo: "limite_da_sessao",
         resposta: RESPOSTA_DO_LIMITE,
         trace: [
-          { guarda: "controle", resultado: "passou", detalhe: "conversa com o agent" },
-          { guarda: "limite", resultado: "interrompeu", detalhe: "31 de 30 mensagens" },
+          {
+            etapa: "guarda",
+            nome: "controle",
+            resultado: "passou",
+            detalhe: "conversa com o agent",
+          },
+          {
+            etapa: "guarda",
+            nome: "limite",
+            resultado: "interrompeu",
+            detalhe: "31 de 30 mensagens",
+          },
         ],
       },
     });
@@ -138,7 +151,8 @@ describe("Guarda de vencidos: o agent já sabe o que está atrasado", () => {
 
     expect(turno.chamadosVencidos.map((chamado) => chamado.id)).toEqual([incidenteDaAna.id]);
     expect(turno.trace).toContainEqual({
-      guarda: "vencidos",
+      etapa: "guarda",
+      nome: "vencidos",
       resultado: "passou",
       detalhe: "INC-20311 vencido",
     });
@@ -151,7 +165,8 @@ describe("Guarda de vencidos: o agent já sabe o que está atrasado", () => {
 
     expect(turno.chamadosVencidos).toEqual([]);
     expect(turno.trace).toContainEqual({
-      guarda: "vencidos",
+      etapa: "guarda",
+      nome: "vencidos",
       resultado: "passou",
       detalhe: "nenhum chamado vencido",
     });
@@ -164,7 +179,8 @@ describe("Guarda de vencidos: o agent já sabe o que está atrasado", () => {
 
     expect(turno.chamadosVencidos).toEqual([]);
     expect(turno.trace).toContainEqual({
-      guarda: "vencidos",
+      etapa: "guarda",
+      nome: "vencidos",
       resultado: "nao_verificou",
       detalhe: "serviço de chamados indisponível",
     });
@@ -177,7 +193,7 @@ describe("Turno pronto", () => {
 
     const turno = valorDe(await prepararTurno(entrada(comAgent, 3), cliente));
 
-    expect(turno.trace.map((passo) => passo.guarda)).toEqual(["controle", "limite", "vencidos"]);
+    expect(turno.trace.map((passo) => passo.nome)).toEqual(["controle", "limite", "vencidos"]);
     expect(turno).toMatchObject({
       usuario: ana,
       conversa: comAgent,

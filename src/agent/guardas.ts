@@ -15,7 +15,8 @@ export const RESPOSTA_DO_LIMITE =
 export type NomeDaGuarda = "controle" | "limite" | "vencidos";
 
 export type PassoDaGuarda = {
-  readonly guarda: NomeDaGuarda;
+  readonly etapa: "guarda";
+  readonly nome: NomeDaGuarda;
   readonly resultado: "passou" | "interrompeu" | "nao_verificou";
   readonly detalhe: string;
 };
@@ -134,11 +135,11 @@ async function guardaDosVencidos(
 }
 
 function passo(
-  guarda: NomeDaGuarda,
+  nome: NomeDaGuarda,
   resultado: PassoDaGuarda["resultado"],
   detalhe: string,
 ): PassoDaGuarda {
-  return { guarda, resultado, detalhe };
+  return { etapa: "guarda", nome, resultado, detalhe };
 }
 
 function marcarComoPronto(turno: Omit<TurnoPronto, typeof preparadoPelasGuardas>): TurnoPronto {
