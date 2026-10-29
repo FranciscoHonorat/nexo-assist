@@ -1,4 +1,4 @@
-import { and, asc, eq, getTableColumns, gt, max } from "drizzle-orm";
+import { and, asc, count, desc, eq, getTableColumns, gt, max } from "drizzle-orm";
 import { novaConversa, type Conversa, type Controle } from "../../domain/conversa.js";
 import type { RascunhoId } from "../../domain/rascunho-id.js";
 import type { Rascunho } from "../../domain/rascunho.js";
@@ -8,6 +8,7 @@ import type { UserId } from "../../domain/user-id.js";
 import type { Banco } from "../../infraestrutura/banco.js";
 import {
   DESDE_O_COMECO,
+  maisRecentePrimeiro,
   eventoDa,
   eventoDaResolucao,
   mesmoControle,
@@ -30,6 +31,7 @@ export function conversasPostgres(db: Banco): Conversas {
   const operacoes = conversasSemProtecao(db);
   return {
     atual: (dono) => protegerDaQuedaDoBanco(() => operacoes.atual(dono)),
+    listar: () => protegerDaQuedaDoBanco(() => operacoes.listar()),
     transicionar: (transicao, agora) =>
       protegerDaQuedaDoBanco(() => operacoes.transicionar(transicao, agora)),
     registrarMensagem: (dono, mensagem) =>
@@ -68,6 +70,35 @@ function conversasSemProtecao(db: Banco): Conversas {
         ),
       );
       return sucesso({ conversa: paraConversa(exigir(linha)), mensagensNaSessao });
+    },
+    listar: async () => {
+      const daSessaoAtual = and(
+        eq(mensagens.dono, conversas.dono),
+        gt(mensagens.id, conversas.sessaoDesde),
+      );
+      const linhas = await db.select().from(conversas);
+      const ultimas = await db
+        .selectDistinctOn([mensagens.dono], getTableColumns(mensagens))
+        .from(mensagens)
+        .innerJoin(conversas, daSessaoAtual)
+        .orderBy(mensagens.dono, desc(mensagens.id));
+      const contagens = await db
+        .select({ dono: mensagens.dono, total: count() })
+        .from(mensagens)
+        .innerJoin(conversas, daSessaoAtual)
+        .where(eq(mensagens.autor, "funcionario"))
+        .groupBy(mensagens.dono);
+      const ultimaPorDono = new Map(ultimas.map((linha) => [linha.dono, paraMensagem(linha)]));
+      const totalPorDono = new Map(contagens.map(({ dono, total }) => [dono, total]));
+      return sucesso(
+        linhas
+          .map((linha) => ({
+            conversa: paraConversa(linha),
+            ultima: ultimaPorDono.get(linha.dono) ?? null,
+            mensagensNaSessao: totalPorDono.get(linha.dono) ?? 0,
+          }))
+          .toSorted(maisRecentePrimeiro),
+      );
     },
     transicionar: (transicao, agora) =>
       db.transaction(async (tx) => {

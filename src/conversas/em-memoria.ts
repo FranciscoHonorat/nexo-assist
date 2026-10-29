@@ -5,6 +5,7 @@ import type { RascunhoId } from "../domain/rascunho-id.js";
 import type { Rascunho, StatusRascunho } from "../domain/rascunho.js";
 import {
   DESDE_O_COMECO,
+  maisRecentePrimeiro,
   eventoDa,
   eventoDaResolucao,
   mesmoControle,
@@ -38,10 +39,19 @@ export function conversasEmMemoria(): Conversas {
     atual: (dono) => {
       const conversa = conversaDe(dono);
       porDono.set(dono, conversa);
-      const mensagensNaSessao = daSessao(dono).filter(
-        (mensagem) => mensagem.autor === "funcionario",
-      ).length;
+      const mensagensNaSessao = doFuncionario(daSessao(dono));
       return Promise.resolve(sucesso({ conversa, mensagensNaSessao }));
+    },
+    listar: () => {
+      const resumos = [...porDono.values()].map((conversa) => {
+        const daSessaoAtual = daSessao(conversa.dono);
+        return {
+          conversa,
+          ultima: daSessaoAtual.at(-1) ?? null,
+          mensagensNaSessao: doFuncionario(daSessaoAtual),
+        };
+      });
+      return Promise.resolve(sucesso(resumos.toSorted(maisRecentePrimeiro)));
     },
     transicionar: (transicao, agora) => {
       const { antes, depois } = transicao;
@@ -105,4 +115,8 @@ export function conversasEmMemoria(): Conversas {
       return Promise.resolve(sucesso(undefined));
     },
   };
+}
+
+function doFuncionario(mensagens: readonly Mensagem[]): number {
+  return mensagens.filter(({ autor }) => autor === "funcionario").length;
 }

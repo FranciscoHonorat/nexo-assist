@@ -27,6 +27,7 @@ const naFila = valorDe(
 function chamadas(conversas: Conversas) {
   return {
     atual: () => conversas.atual(ana),
+    listar: () => conversas.listar(),
     transicionar: () =>
       conversas.transicionar(
         { evento: "devolvida", antes: naFila, depois: novaConversa({ dono: ana }) },

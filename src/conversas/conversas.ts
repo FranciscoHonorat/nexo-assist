@@ -48,6 +48,12 @@ export type Turno = {
   readonly agora: Date;
 };
 
+export type ResumoDaConversa = {
+  readonly conversa: Conversa<Controle>;
+  readonly ultima: Mensagem | null;
+  readonly mensagensNaSessao: number;
+};
+
 export type ErroDeControle = { readonly motivo: "controle_mudou" };
 
 export type ErroDeRascunho =
@@ -65,6 +71,7 @@ type Resposta<T, E = never> = Promise<Resultado<T, E | ErroDeInfraestrutura>>;
 
 export type Conversas = {
   readonly atual: (dono: UserId) => Resposta<ConversaAtual>;
+  readonly listar: () => Resposta<readonly ResumoDaConversa[]>;
   readonly transicionar: (transicao: Transicao, agora: Date) => Resposta<undefined, ErroDeControle>;
   readonly registrarMensagem: (
     dono: UserId,
@@ -86,6 +93,10 @@ export type Conversas = {
     resolucao: Resolucao,
   ) => Resposta<undefined, Extract<ErroDeRascunho, { motivo: "rascunho_ja_resolvido" }>>;
 };
+
+export function maisRecentePrimeiro(a: ResumoDaConversa, b: ResumoDaConversa): number {
+  return (b.ultima?.id ?? DESDE_O_COMECO) - (a.ultima?.id ?? DESDE_O_COMECO);
+}
 
 export function eventoDa(transicao: Transicao): EventoDaConversa {
   switch (transicao.evento) {
