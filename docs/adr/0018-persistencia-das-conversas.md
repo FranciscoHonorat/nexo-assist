@@ -29,8 +29,9 @@ em PostgreSQL, verificadas pelo mesmo contrato:
 
 - **Uma conversa atual por funcionário**, com o dono como chave. O domínio já funciona assim:
   `finalizar` devolve uma conversa nova para o mesmo dono.
-- **A sessão, por enquanto, é a conversa atual.** `mensagensNaSessao` conta as mensagens do
-  funcionário nela. O botão de "nova sessão" fica para a interface.
+- **A sessão é um marco dentro da conversa atual** (atualizado na
+  [ADR-0021](0021-historico-com-eventos-e-console.md)). `mensagensNaSessao` conta as mensagens do
+  funcionário desde o marco.
 - **O registro do agent é um `Json` opaco.** Declaração, confiança e trace são gravados sem que
   conversas importe tipos do agent; o agent depende de conversas, e não o contrário.
 - **As regras de estado também estão no banco.** `num_nonnulls` garante que só a conversa fora do
@@ -84,5 +85,6 @@ o funcionário escreveu; descartar a pergunta perderia contexto.
 1. [x] Interface `Conversas`, contrato e duas implementações.
 2. [x] Transições e turno condicionais.
 3. [x] `atenderMensagem` com `mensagensNaSessao` vindo do banco.
-4. [ ] "Nova sessão" pela interface, zerando a contagem.
-5. [ ] Eventos para o tempo real ([ADR-0002](0002-tempo-real-com-sse.md)) a cada mensagem gravada.
+4. [x] "Nova sessão" zerando a contagem (`iniciarSessao`,
+       [ADR-0021](0021-historico-com-eventos-e-console.md)); o botão fica para a interface.
+5. [x] Eventos para o tempo real ([ADR-0002](0002-tempo-real-com-sse.md)) a cada mensagem gravada.

@@ -119,8 +119,8 @@ complemento. A leitura fica para quando houver essa história.
 - Mais fácil: acrescentar uma verificação a uma proposta (uma linha em `propor.ts` e um motivo em
   `descreverErro`, que o compilador cobra).
 - Mais difícil: a interface precisa de dois endpoints a mais (confirmar e descartar).
-- O histórico ainda não registra o resultado do clique; o modelo descobre que o chamado foi criado
-  consultando os chamados.
+- O resultado do clique entra no histórico na mesma transação que resolve o rascunho
+  ([ADR-0021](0021-historico-com-eventos-e-console.md)), e o modelo o lê como aviso do sistema.
 
 ## Itens de ação
 
@@ -129,4 +129,5 @@ complemento. A leitura fica para quando houver essa história.
 3. [x] `confirmarRascunho` e `descartarRascunho`.
 4. [x] Transferência como decisão final.
 5. [x] Anexos da resposta e contexto das mensagens anteriores.
-6. [ ] Endpoints de confirmar e descartar, e o resultado do clique no histórico.
+6. [x] Resultado do clique no histórico.
+7. [ ] Endpoints de confirmar e descartar.

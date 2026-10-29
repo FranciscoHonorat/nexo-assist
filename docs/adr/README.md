@@ -21,7 +21,7 @@ de alteração de status.
 | ADR                                                  | Decisão                                                          | Status | Implementação |
 | ---------------------------------------------------- | ---------------------------------------------------------------- | ------ | ------------- |
 | [0001](0001-servico-de-chamados-in-process.md)       | Serviço de chamados no mesmo processo, atrás de interface        | Aceito | Feito         |
-| [0002](0002-tempo-real-com-sse.md)                   | Tempo real com SSE e EventEmitter; banco como fonte da verdade   | Aceito | Pendente      |
+| [0002](0002-tempo-real-com-sse.md)                   | Tempo real com SSE e EventEmitter; banco como fonte da verdade   | Aceito | Em andamento  |
 | [0003](0003-saida-do-agent-via-tool.md)              | Toda saída do agent passa pela tool `responder`                  | Aceito | Em andamento  |
 | [0004](0004-postgres-com-drizzle.md)                 | PostgreSQL com Drizzle; PGlite nos testes                        | Aceito | Em andamento  |
 | [0005](0005-mastra-minimo.md)                        | Mastra em uso mínimo, contido atrás de `AgentStep`               | Aceito | Feito         |
@@ -40,3 +40,4 @@ de alteração de status.
 | [0018](0018-persistencia-das-conversas.md)           | Persistência das conversas, com controle e turno condicionais    | Aceito | Feito         |
 | [0019](0019-acoes-do-agent.md)                       | O modelo propõe, o clique confirma, o código verifica            | Aceito | Em andamento  |
 | [0020](0020-central-de-ajuda.md)                     | Central de ajuda com busca por palavras, no código               | Aceito | Em andamento  |
+| [0021](0021-historico-com-eventos-e-console.md)      | Histórico com eventos, mensagens do analista e sessões           | Aceito | Em andamento  |

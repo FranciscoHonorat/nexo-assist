@@ -59,8 +59,30 @@ instância diferente e efêmera, e o `emit` de uma não chega ao SSE de outra.
 - Revisitar se precisar de mais de uma instância: trocar o EventEmitter por `LISTEN/NOTIFY` do
   PostgreSQL ([ADR-0004](0004-postgres-com-drizzle.md)), mantendo a interface `EventBus`.
 
+## Como foi implementado
+
+- `src/tempo-real/avisos.ts`: a interface `Avisos` (o `EventBus`) com `EventEmitter`. O aviso leva
+  só o dono da conversa, nunca o conteúdo.
+- `conversasQueAvisam(conversas, avisos)` decora `Conversas`: toda escrita que chegou ao banco
+  avisa **depois** de gravada. Cada operação é listada no decorador, então uma operação nova não
+  compila até alguém decidir se ela avisa.
+- `acompanharConversa(dono, ultimaVista, …)` é um gerador: passa a ouvir, lê o banco a partir do
+  cursor e, a cada aviso da mesma conversa, lê de novo a partir do último id entregue. Um aviso
+  que chega durante uma leitura não se perde. Banco fora do ar entrega `indisponivel` e termina,
+  para o cliente reconectar com o último id (`Last-Event-ID`).
+- O cursor depende de as escritas da mesma conversa serem serializadas
+  ([ADR-0021](0021-historico-com-eventos-e-console.md)).
+
+## Como foi verificado
+
+7 cenários do acompanhamento (conexão do começo, reconexão sem repetir, mensagem nova, escrita
+durante a primeira leitura, mensagens de outra pessoa, banco fora do ar, desconexão), 10 do
+decorador e, no PostgreSQL real, um leitor pelo cursor durante escritas simultâneas. Com o
+despertador sabotado para esquecer um aviso, dois cenários falharam.
+
 ## Itens de ação
 
-1. [ ] Definir a interface `EventBus`.
-2. [ ] Endpoint SSE com recuperação do estado ao reconectar.
-3. [ ] Testar que nenhuma mensagem se perde numa reconexão.
+1. [x] Definir a interface `EventBus`.
+2. [ ] Endpoint SSE com recuperação do estado ao reconectar (o acompanhamento está pronto; falta o
+       HTTP).
+3. [x] Testar que nenhuma mensagem se perde numa reconexão.

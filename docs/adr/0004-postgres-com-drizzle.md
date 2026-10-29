@@ -108,4 +108,8 @@ dialeto (`pgTable` e `sqliteTable`), então trocar de banco depois não sai de g
 3. [x] Fixture de teste com PGlite.
 4. [x] Indisponibilidade do banco vira `indisponivel` ([ADR-0014](0014-legado-fora-do-ar.md)).
 5. [x] Testes de concorrência com PostgreSQL real, e a correção do `complementar`.
+       O contrato de conversas também roda no PostgreSQL real, com a migração protegida por
+       `pg_advisory_lock` para os arquivos de teste não migrarem o mesmo banco ao mesmo tempo. Foi
+       ele que pegou o `ADD VALUE` de enum que o PGlite aceitava
+       ([ADR-0021](0021-historico-com-eventos-e-console.md)).
 6. [ ] Aplicar as migrations na inicialização em produção.
