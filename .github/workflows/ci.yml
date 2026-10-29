@@ -47,3 +47,35 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }}
+
+  deploy:
+    needs: check
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: ${{ vars.URL_DE_PRODUCAO }}
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      URL_DE_PRODUCAO: ${{ vars.URL_DE_PRODUCAO }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Grava a versão que vai para o ar
+        run: echo "$GITHUB_SHA" > VERSAO
+      - name: Envia ao Railway
+        run: npx --yes @railway/cli@5.68.0 up --ci --service "${{ vars.RAILWAY_SERVICE }}"
+      - name: Confere que a versão nova está no ar
+        run: |
+          for _ in $(seq 1 60); do
+            no_ar=$(curl -fsS "$URL_DE_PRODUCAO/api/saude" | jq -r .versao || true)
+            if [ "$no_ar" = "$GITHUB_SHA" ]; then
+              echo "Versão $GITHUB_SHA no ar."
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "A versão $GITHUB_SHA não entrou no ar em 10 minutos; no ar está: ${no_ar:-nada}."
+          exit 1
