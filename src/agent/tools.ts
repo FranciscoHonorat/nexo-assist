@@ -66,13 +66,11 @@ async function buscarPorId(
   const lido = lerTicketId(id);
   if (!lido.ok) return lido;
   const consulta = await chamados.obter(lido.valor, usuario);
-  if (!consulta.ok) {
-    if (ehIndisponivel(consulta.erro)) {
-      throw new Error("legado fora do ar durante uma tool: ainda sem tratamento");
-    }
-    return falha(consulta.erro);
+  if (consulta.ok) return consulta;
+  if (ehIndisponivel(consulta.erro)) {
+    throw new Error("legado fora do ar durante uma tool: ainda sem tratamento");
   }
-  return consulta;
+  return falha(consulta.erro);
 }
 
 function descreverBusca(resposta: RespostaDaBusca): ToolExecutada["trace"] {

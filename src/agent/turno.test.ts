@@ -13,7 +13,8 @@ import {
 import { ticketClientEmMemoria, type Operacao } from "../tickets/em-memoria.js";
 import { prepararTurno } from "./guardas.js";
 import type { ChamadaDeTool, Decisao, Declaracao } from "./agent-step.js";
-import { agentStepRoteirizado } from "./roteirizado.js";
+import { agentStepRoteirizado, type AgentStepRoteirizado } from "./roteirizado.js";
+import type { PassoDaTool } from "./tools.js";
 import { executarTurno, LIMITE_DE_ITERACOES, RESPOSTA_DO_LIMITE_DE_ITERACOES } from "./turno.js";
 
 async function cenarioDaAna(mensagem: string, chamados: readonly Chamado[] = []) {
@@ -58,6 +59,18 @@ function textoSolto(texto: string): Decisao {
 
 function chamaTools(...chamadas: ChamadaDeTool[]): Decisao {
   return { tipo: "tools", chamadas };
+}
+
+function vistoDepoisDasTools(modelo: AgentStepRoteirizado) {
+  return modelo.contextosRecebidos[1]?.resultadosDeTools;
+}
+
+function passoDeTool(
+  nome: PassoDaTool["nome"],
+  resultado: PassoDaTool["resultado"],
+  detalhe: string,
+): PassoDaTool {
+  return { etapa: "tool", nome, resultado, detalhe };
 }
 
 describe("Turno do agent: toda saída passa pela tool responder", () => {
@@ -108,15 +121,12 @@ describe("Tool consultar_chamados: o agent vê só os chamados de quem está fal
     const resposta = await executarTurno(turno, modelo, chamados);
 
     expect(resposta.mensagem).toBe("O INC-20311 está aberto e atrasado.");
-    expect(modelo.contextosRecebidos[1]?.resultadosDeTools).toEqual([
+    expect(vistoDepoisDasTools(modelo)).toEqual([
       { tool: "consultar_chamados", chamados: [incidenteDaAna, requisicaoDaAna] },
     ]);
-    expect(resposta.trace).toContainEqual({
-      etapa: "tool",
-      nome: "consultar_chamados",
-      resultado: "executou",
-      detalhe: "2 chamados: INC-20311, REQ-10442",
-    });
+    expect(resposta.trace).toContainEqual(
+      passoDeTool("consultar_chamados", "executou", "2 chamados: INC-20311, REQ-10442"),
+    );
   });
 });
 
@@ -158,18 +168,15 @@ describe("Tool obter_chamado: o LLM propõe o id, o código valida antes de cons
     const resposta = await executarTurno(turno, modelo, chamados);
 
     expect(consultas).toEqual(["listar"]);
-    expect(modelo.contextosRecebidos[1]?.resultadosDeTools).toEqual([
+    expect(vistoDepoisDasTools(modelo)).toEqual([
       {
         tool: "obter_chamado",
         resposta: { ok: false, erro: { motivo: "formato_invalido", recebido: "abc" } },
       },
     ]);
-    expect(resposta.trace).toContainEqual({
-      etapa: "tool",
-      nome: "obter_chamado",
-      resultado: "argumentos_invalidos",
-      detalhe: 'id "abc" fora do formato',
-    });
+    expect(resposta.trace).toContainEqual(
+      passoDeTool("obter_chamado", "argumentos_invalidos", 'id "abc" fora do formato'),
+    );
   });
 
   it("Dado um id válido de um chamado da Ana, Quando o modelo pede o chamado, Então recebe o chamado consultado em nome da Ana", async () => {
@@ -182,15 +189,12 @@ describe("Tool obter_chamado: o LLM propõe o id, o código valida antes de cons
     const resposta = await executarTurno(turno, modelo, chamados);
 
     expect(consultas).toEqual(["listar", "obter"]);
-    expect(modelo.contextosRecebidos[1]?.resultadosDeTools).toEqual([
+    expect(vistoDepoisDasTools(modelo)).toEqual([
       { tool: "obter_chamado", resposta: { ok: true, valor: incidenteDaAna } },
     ]);
-    expect(resposta.trace).toContainEqual({
-      etapa: "tool",
-      nome: "obter_chamado",
-      resultado: "executou",
-      detalhe: "INC-20311 encontrado",
-    });
+    expect(resposta.trace).toContainEqual(
+      passoDeTool("obter_chamado", "executou", "INC-20311 encontrado"),
+    );
   });
 
   it("Dado um chamado do João, Quando a Ana pede esse id, Então a resposta é não encontrado, igual a um id que não existe", async () => {
@@ -205,17 +209,14 @@ describe("Tool obter_chamado: o LLM propõe o id, o código valida antes de cons
 
     const resposta = await executarTurno(turno, modelo, chamados);
 
-    expect(modelo.contextosRecebidos[1]?.resultadosDeTools).toEqual([
+    expect(vistoDepoisDasTools(modelo)).toEqual([
       {
         tool: "obter_chamado",
         resposta: { ok: false, erro: { motivo: "nao_encontrado", id: incidenteDoJoao.id } },
       },
     ]);
-    expect(resposta.trace).toContainEqual({
-      etapa: "tool",
-      nome: "obter_chamado",
-      resultado: "executou",
-      detalhe: "INC-20150 não encontrado",
-    });
+    expect(resposta.trace).toContainEqual(
+      passoDeTool("obter_chamado", "executou", "INC-20150 não encontrado"),
+    );
   });
 });
