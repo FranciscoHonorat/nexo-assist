@@ -4,7 +4,7 @@ import tseslint from "typescript-eslint";
 import { fronteiras } from "./src/arquitetura/fronteiras.ts";
 
 export default defineConfig(
-  { ignores: ["coverage/", "node_modules/"] },
+  { ignores: ["coverage/", "node_modules/", "dist/", "web/dist/"] },
   js.configs.recommended,
   tseslint.configs.strictTypeChecked,
   tseslint.configs.stylisticTypeChecked,

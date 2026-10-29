@@ -44,6 +44,14 @@ const FRONTEIRAS: readonly Fronteira[] = [
       "Mastra e AI SDK só dentro de src/agent/mastra; o resto usa a interface AgentStep (ADR-0005).",
   },
   {
+    nome: "da-interface",
+    protege: ["web/src/**/*.{ts,tsx}"],
+    proibe: /(^|\/)src\//,
+    permite: /\/src\/http\/contrato\.js$/,
+    porque:
+      "A interface conhece o servidor só pelo contrato da API (src/http/contrato.ts), e só como tipo.",
+  },
+  {
     nome: "do-dominio",
     protege: ["src/domain/**/*.ts"],
     proibe: /^\.\.\//,

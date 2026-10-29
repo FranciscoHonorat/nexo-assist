@@ -6,7 +6,7 @@ import { fronteiras } from "./fronteiras.js";
 const eslint = new ESLint({
   overrideConfigFile: true,
   overrideConfig: [
-    { files: ["**/*.ts"], languageOptions: { parser: tseslint.parser } },
+    { files: ["**/*.ts", "**/*.tsx"], languageOptions: { parser: tseslint.parser } },
     ...fronteiras,
   ],
 });
@@ -125,6 +125,22 @@ describe("Fronteira do framework de agent", () => {
       expect(await violacoes("src/agent/turno.ts", importacao)).toEqual([]);
     },
   );
+});
+
+describe("Fronteira da interface", () => {
+  it.each([
+    "../../src/agent/atender.js",
+    "../../src/conversas/em-memoria.js",
+    "../src/domain/conversa.js",
+  ])("na interface, importar código do servidor (%s) viola a fronteira", async (importacao) => {
+    expect(await violacoes("web/src/chat/Chat.tsx", importacao)).toEqual([
+      expect.stringContaining("só pelo contrato da API"),
+    ]);
+  });
+
+  it("na interface, importar o contrato da API é permitido", async () => {
+    expect(await violacoes("web/src/api.ts", "../../src/http/contrato.js")).toEqual([]);
+  });
 });
 
 describe("Reexportações", () => {
