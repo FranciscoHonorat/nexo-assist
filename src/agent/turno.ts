@@ -1,3 +1,4 @@
+import { lerTicketId } from "../domain/ticket-id.js";
 import type { UserId } from "../domain/user-id.js";
 import type { TicketClient } from "../tickets/ticket-client.js";
 import type {
@@ -24,7 +25,7 @@ export type PassoDaResposta = {
 export type PassoDaTool = {
   readonly etapa: "tool";
   readonly nome: ChamadaDeTool["tool"];
-  readonly resultado: "executou";
+  readonly resultado: "executou" | "argumentos_invalidos";
   readonly detalhe: string;
 };
 
@@ -122,16 +123,39 @@ async function executarTool(
   usuario: UserId,
   chamados: TicketClient,
 ): Promise<ToolExecutada> {
+  switch (chamada.tool) {
+    case "consultar_chamados":
+      return consultarChamados(usuario, chamados);
+    case "obter_chamado":
+      return obterChamado(chamada.argumentos.id);
+  }
+}
+
+async function consultarChamados(usuario: UserId, chamados: TicketClient): Promise<ToolExecutada> {
   const doUsuario = await chamados.listar(usuario);
   if (!doUsuario.ok) throw new Error("legado fora do ar durante uma tool: ainda sem tratamento");
   const ids = doUsuario.valor.map((chamado) => chamado.id).join(", ");
   return {
-    resultado: { tool: chamada.tool, chamados: doUsuario.valor },
+    resultado: { tool: "consultar_chamados", chamados: doUsuario.valor },
     passo: {
       etapa: "tool",
-      nome: chamada.tool,
+      nome: "consultar_chamados",
       resultado: "executou",
       detalhe: `${String(doUsuario.valor.length)} chamados: ${ids}`,
+    },
+  };
+}
+
+function obterChamado(id: string): ToolExecutada {
+  const lido = lerTicketId(id);
+  if (lido.ok) throw new Error("obter_chamado com id válido: ainda sem implementação");
+  return {
+    resultado: { tool: "obter_chamado", erro: lido.erro },
+    passo: {
+      etapa: "tool",
+      nome: "obter_chamado",
+      resultado: "argumentos_invalidos",
+      detalhe: `id "${id}" fora do formato`,
     },
   };
 }

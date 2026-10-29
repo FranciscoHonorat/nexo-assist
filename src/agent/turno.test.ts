@@ -10,14 +10,23 @@ import {
   requisicaoDaAna,
   t1,
 } from "../tickets/contrato/fixtures.js";
-import { ticketClientEmMemoria } from "../tickets/em-memoria.js";
+import { ticketClientEmMemoria, type Operacao } from "../tickets/em-memoria.js";
 import { prepararTurno } from "./guardas.js";
 import type { ChamadaDeTool, Decisao, Declaracao } from "./agent-step.js";
 import { agentStepRoteirizado } from "./roteirizado.js";
 import { executarTurno, LIMITE_DE_ITERACOES, RESPOSTA_DO_LIMITE_DE_ITERACOES } from "./turno.js";
 
 async function cenarioDaAna(mensagem: string, chamados: readonly Chamado[] = []) {
-  const cliente = ticketClientEmMemoria({ chamados });
+  const consultas: Operacao[] = [];
+  const cliente = ticketClientEmMemoria(
+    { chamados },
+    {
+      falhar: (operacao) => {
+        consultas.push(operacao);
+        return undefined;
+      },
+    },
+  );
   const turno = valorDe(
     await prepararTurno(
       {
@@ -30,7 +39,7 @@ async function cenarioDaAna(mensagem: string, chamados: readonly Chamado[] = [])
       cliente,
     ),
   );
-  return { turno, chamados: cliente };
+  return { turno, chamados: cliente, consultas };
 }
 
 const declaracaoDaSaudacao = {
@@ -134,6 +143,29 @@ describe("Limite de iterações: o modelo não fica preso num loop de tools", ()
       etapa: "resposta",
       resultado: "limite_de_iteracoes",
       detalhe: "o modelo pediu tools 5 vezes sem responder",
+    });
+  });
+});
+
+describe("Tool obter_chamado: o LLM propõe o id, o código valida antes de consultar", () => {
+  it("Dado um id fora do formato, Quando o modelo pede o chamado, Então o serviço não é consultado e o erro volta ao modelo", async () => {
+    const { turno, chamados, consultas } = await cenarioDaAna("e o chamado abc?", [incidenteDaAna]);
+    const modelo = agentStepRoteirizado([
+      chamaTools({ tool: "obter_chamado", argumentos: { id: "abc" } }),
+      responde("Não reconheci esse número. Os chamados começam com INC- ou REQ-."),
+    ]);
+
+    const resposta = await executarTurno(turno, modelo, chamados);
+
+    expect(consultas).toEqual(["listar"]);
+    expect(modelo.contextosRecebidos[1]?.resultadosDeTools).toEqual([
+      { tool: "obter_chamado", erro: { motivo: "formato_invalido", recebido: "abc" } },
+    ]);
+    expect(resposta.trace).toContainEqual({
+      etapa: "tool",
+      nome: "obter_chamado",
+      resultado: "argumentos_invalidos",
+      detalhe: 'id "abc" fora do formato',
     });
   });
 });
