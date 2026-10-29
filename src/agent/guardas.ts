@@ -65,8 +65,8 @@ export async function prepararTurno(
   const controle = guardaDoControle(conversa);
   if (!controle.ok) return controle;
 
-  const limite = guardaDoLimite(mensagensNaSessao, [controle.valor.passo]);
-  if (!limite.ok) return limite;
+  const limite = guardaDoLimite(mensagensNaSessao);
+  if (!limite.ok) return interrompidoDepoisDe([controle.valor.passo], limite.erro);
 
   const vencidos = await guardaDosVencidos(usuario, agora, chamados);
 
@@ -77,7 +77,7 @@ export async function prepararTurno(
       mensagem,
       agora,
       chamadosVencidos: vencidos.chamadosVencidos,
-      trace: [controle.valor.passo, limite.valor, vencidos.passo],
+      trace: [controle.valor.passo, limite.valor.passo, vencidos.passo],
     }),
   );
 }
@@ -104,18 +104,17 @@ function guardaDoControle(
 
 function guardaDoLimite(
   mensagensNaSessao: number,
-  anteriores: TraceDasGuardas,
-): Resultado<PassoDaGuarda, Interrupcao> {
+): Resultado<{ readonly passo: PassoDaGuarda }, Interrupcao> {
   const numeroDaMensagem = mensagensNaSessao + 1;
   const contagem = `${String(numeroDaMensagem)} de ${String(LIMITE_DE_MENSAGENS_POR_SESSAO)} mensagens`;
   if (numeroDaMensagem > LIMITE_DE_MENSAGENS_POR_SESSAO) {
     return falha({
       motivo: "limite_da_sessao",
       resposta: RESPOSTA_DO_LIMITE,
-      trace: [...anteriores, passo("limite", "interrompeu", contagem)],
+      trace: [passo("limite", "interrompeu", contagem)],
     });
   }
-  return sucesso(passo("limite", "passou", contagem));
+  return sucesso({ passo: passo("limite", "passou", contagem) });
 }
 
 async function guardaDosVencidos(
@@ -140,6 +139,13 @@ async function guardaDosVencidos(
       ? "nenhum chamado vencido"
       : chamadosVencidos.map((chamado) => `${chamado.id} vencido`).join(", ");
   return { chamadosVencidos, passo: passo("vencidos", "passou", detalhe) };
+}
+
+function interrompidoDepoisDe(
+  anteriores: TraceDasGuardas,
+  interrupcao: Interrupcao,
+): Resultado<never, Interrupcao> {
+  return falha({ ...interrupcao, trace: [...anteriores, ...interrupcao.trace] });
 }
 
 function passo<N extends NomeDaGuarda>(
