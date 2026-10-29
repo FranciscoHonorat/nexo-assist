@@ -192,4 +192,30 @@ describe("Tool obter_chamado: o LLM propõe o id, o código valida antes de cons
       detalhe: "INC-20311 encontrado",
     });
   });
+
+  it("Dado um chamado do João, Quando a Ana pede esse id, Então a resposta é não encontrado, igual a um id que não existe", async () => {
+    const { turno, chamados } = await cenarioDaAna("e o INC-20150?", [
+      incidenteDaAna,
+      incidenteDoJoao,
+    ]);
+    const modelo = agentStepRoteirizado([
+      chamaTools({ tool: "obter_chamado", argumentos: { id: "INC-20150" } }),
+      responde("Não encontrei o INC-20150 entre os seus chamados."),
+    ]);
+
+    const resposta = await executarTurno(turno, modelo, chamados);
+
+    expect(modelo.contextosRecebidos[1]?.resultadosDeTools).toEqual([
+      {
+        tool: "obter_chamado",
+        resposta: { ok: false, erro: { motivo: "nao_encontrado", id: incidenteDoJoao.id } },
+      },
+    ]);
+    expect(resposta.trace).toContainEqual({
+      etapa: "tool",
+      nome: "obter_chamado",
+      resultado: "executou",
+      detalhe: "INC-20150 não encontrado",
+    });
+  });
 });

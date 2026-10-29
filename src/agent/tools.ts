@@ -1,8 +1,12 @@
 import type { Chamado } from "../domain/chamado.js";
-import type { Resultado } from "../domain/resultado.js";
+import { falha, type Resultado } from "../domain/resultado.js";
 import { lerTicketId, type ErroTicketId } from "../domain/ticket-id.js";
 import type { UserId } from "../domain/user-id.js";
-import type { TicketClient } from "../tickets/ticket-client.js";
+import {
+  ehIndisponivel,
+  type ErroDeConsulta,
+  type TicketClient,
+} from "../tickets/ticket-client.js";
 import type { ChamadaDeTool, ResultadoDeTool } from "./agent-step.js";
 
 export type PassoDaTool = {
@@ -43,7 +47,7 @@ async function consultarChamados(usuario: UserId, chamados: TicketClient): Promi
   };
 }
 
-type RespostaDaBusca = Resultado<Chamado, ErroTicketId>;
+type RespostaDaBusca = Resultado<Chamado, ErroTicketId | ErroDeConsulta>;
 
 async function obterChamado(
   id: string,
@@ -62,16 +66,26 @@ async function buscarPorId(
   const lido = lerTicketId(id);
   if (!lido.ok) return lido;
   const consulta = await chamados.obter(lido.valor, usuario);
-  if (!consulta.ok) throw new Error("obter_chamado sem sucesso: ainda sem tratamento");
+  if (!consulta.ok) {
+    if (ehIndisponivel(consulta.erro)) {
+      throw new Error("legado fora do ar durante uma tool: ainda sem tratamento");
+    }
+    return falha(consulta.erro);
+  }
   return consulta;
 }
 
 function descreverBusca(resposta: RespostaDaBusca): ToolExecutada["trace"] {
   if (resposta.ok) return { resultado: "executou", detalhe: `${resposta.valor.id} encontrado` };
-  return {
-    resultado: "argumentos_invalidos",
-    detalhe: `id "${resposta.erro.recebido}" fora do formato`,
-  };
+  switch (resposta.erro.motivo) {
+    case "formato_invalido":
+      return {
+        resultado: "argumentos_invalidos",
+        detalhe: `id "${resposta.erro.recebido}" fora do formato`,
+      };
+    case "nao_encontrado":
+      return { resultado: "executou", detalhe: `${resposta.erro.id} não encontrado` };
+  }
 }
 
 export function passoDaTool({ resultado, trace }: ToolExecutada): PassoDaTool {
