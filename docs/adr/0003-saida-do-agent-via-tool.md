@@ -74,6 +74,6 @@ forçado de tool (`tool_choice` `any`/`tool` devolve erro 400). Por isso:
 
 1. [x] Tipos do trace: `PassoDoTurno` e o `trace` de `RespostaDoTurno`
        ([ADR-0017](0017-loop-de-tools-no-codigo.md)).
-2. [ ] Schema da tool `responder`.
+2. [x] Schema da tool `responder` em zod; uma declaração inválida vira `declaracao_invalida`.
 3. [x] Fallback para texto solto, com teste.
 4. [ ] Spike: streaming de argumentos de tool no Mastra.

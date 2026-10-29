@@ -24,8 +24,8 @@ de alteração de status.
 | [0002](0002-tempo-real-com-sse.md)                   | Tempo real com SSE e EventEmitter; banco como fonte da verdade   | Aceito | Pendente      |
 | [0003](0003-saida-do-agent-via-tool.md)              | Toda saída do agent passa pela tool `responder`                  | Aceito | Em andamento  |
 | [0004](0004-postgres-com-drizzle.md)                 | PostgreSQL com Drizzle; PGlite nos testes                        | Aceito | Em andamento  |
-| [0005](0005-mastra-minimo.md)                        | Mastra em uso mínimo, contido atrás de `AgentStep`               | Aceito | Em andamento  |
-| [0006](0006-modelo-de-llm.md)                        | Claude Haiku 5.5 como ponto de partida                           | Aceito | Pendente      |
+| [0005](0005-mastra-minimo.md)                        | Mastra em uso mínimo, contido atrás de `AgentStep`               | Aceito | Feito         |
+| [0006](0006-modelo-de-llm.md)                        | Claude Haiku 5.5 como ponto de partida                           | Aceito | Em andamento  |
 | [0007](0007-esteira-de-qualidade.md)                 | Esteira de qualidade local e no CI; versões fixas                | Aceito | Feito         |
 | [0008](0008-garantias-no-sistema-de-tipos.md)        | Garantias no sistema de tipos; `Resultado` em vez de exceções    | Aceito | Feito         |
 | [0009](0009-codigo-sem-comentarios.md)               | Código sem comentários                                           | Aceito | Feito         |

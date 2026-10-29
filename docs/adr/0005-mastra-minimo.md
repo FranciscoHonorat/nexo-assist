@@ -59,5 +59,6 @@ diferenciais.
 1. [x] Interface `AgentStep`, que faz uma decisão por chamada; o loop de tools ficou no código
        ([ADR-0017](0017-loop-de-tools-no-codigo.md)).
 2. [x] `ScriptedAgentStep` para os testes BDD (`agentStepRoteirizado`).
-3. [ ] `MastraAgentStep`.
-4. [ ] Regra de lint: `@mastra/*` só pode ser importado em `agent/mastra/`.
+3. [x] `MastraAgentStep`, com `mastraComAnthropic` montando o modelo a partir da configuração.
+4. [x] Regra de lint: `@mastra/*`, `@ai-sdk/*` e `ai` só podem ser importados em `agent/mastra/`
+       ([ADR-0015](0015-fronteiras-verificadas-pelo-lint.md)).

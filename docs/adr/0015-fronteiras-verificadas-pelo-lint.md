@@ -24,6 +24,7 @@ As fronteiras são verificadas pelo ESLint e declaradas em `src/arquitetura/fron
 | De conversas           | Fora de `src/conversas`, só a interface `conversas.js` é importável   | Testes; `src/composicao`                              |
 | Do domínio             | `src/domain` não importa nada de fora dele                            | Testes                                                |
 | Da infraestrutura      | `src/infraestrutura` não importa `tickets`, `conversas` nem `agent`   | Testes                                                |
+| Do framework de agent  | `@mastra/*`, `@ai-sdk/*` e `ai` só dentro de `src/agent/mastra`       | Testes                                                |
 
 - Cada fronteira é **uma regra própria** num plugin local (`fronteiras/<nome>`), que verifica
   `import … from`, `export … from` e `export * from` contra uma `RegExp` do que é proibido e do
@@ -32,6 +33,8 @@ As fronteiras são verificadas pelo ESLint e declaradas em `src/arquitetura/fron
 - Como o lint roda no pre-commit e no CI ([ADR-0007](0007-esteira-de-qualidade.md)), uma
   violação não chega a ser commitada.
 - Uma fronteira nova é uma entrada em `FRONTEIRAS`: `{ nome, protege, exceto, proibe, permite, porque }`.
+- Uma fronteira de pacotes declara os nomes com `pacotes("@mastra/*", "ai")`: `@mastra/*` cobre o
+  escopo inteiro, e `ai` cobre o pacote e seus subcaminhos (`ai/test`), mas não `aiko`.
 - O `eslint.config.js` importa esse módulo `.ts` diretamente, usando o _type stripping_ do
   Node 24.
 
@@ -67,7 +70,7 @@ detalhes de infraestrutura, e os testes do domínio deixariam de ser lógica pur
 
 ## Como foi verificado
 
-- 24 testes analisam trechos de código escritos no próprio teste, com um ESLint montado só com as
+- 32 testes analisam trechos de código escritos no próprio teste, com um ESLint montado só com as
   regras de fronteira, incluindo reexportações.
 - Arquivos temporários que violavam as quatro fronteiras foram barrados pelo `eslint` real do
   projeto. Um mesmo arquivo violando chamados e conversas recebeu os dois erros, provando que as
@@ -77,12 +80,12 @@ detalhes de infraestrutura, e os testes do domínio deixariam de ser lógica pur
 
 - Mais fácil: confiar que o agent só fala com a interface.
 - Mais difícil: nada relevante; um import proibido mostra o motivo na mensagem.
-- Quando o agent existir, acrescentar a fronteira do Mastra
-  ([ADR-0005](0005-mastra-minimo.md)): `@mastra/*` só dentro de `src/agent/mastra`.
+- A composição monta o modelo por `mastraComAnthropic`, sem importar o AI SDK: o tipo do modelo
+  do Mastra não vaza para fora de `src/agent/mastra`.
 
 ## Itens de ação
 
 1. [x] Fronteira do serviço de chamados.
 2. [x] Fronteira do domínio.
 3. [x] Fronteiras de conversas e da infraestrutura compartilhada.
-4. [ ] Fronteira do Mastra, quando o agent existir.
+4. [x] Fronteira do framework de agent ([ADR-0005](0005-mastra-minimo.md)).

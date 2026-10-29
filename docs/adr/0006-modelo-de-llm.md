@@ -55,6 +55,8 @@ decisão.
 
 ## Itens de ação
 
-1. [ ] `LLM_MODEL` e o nível de esforço no `.env.example`, validados no boot.
-2. [ ] Guarda para recusa do modelo.
+1. [x] `LLM_MODEL` e `LLM_EFFORT` no `.env.example`, validados no boot por `lerAmbiente`: um
+       modelo fora da lista ou um esforço inválido impedem a subida, e o erro cita só o nome da
+       variável, nunca o valor.
+2. [x] Guarda para recusa do modelo (`finishReason: "content-filter"` vira a decisão `recusa`).
 3. [ ] Eval de prioridade, duplicidade e transferência, com meta definida.
