@@ -37,14 +37,8 @@ export type RespostaDoTurno = {
   readonly trace: readonly PassoDoTurno[];
 };
 
-type SaidaDoModelo = Omit<RespostaDoTurno, "trace"> & {
+type Conclusao = Omit<RespostaDoTurno, "trace"> & {
   readonly passos: readonly PassoDaResposta[];
-};
-
-const MODELO_NAO_DECLAROU: PassoDaResposta = {
-  etapa: "resposta",
-  resultado: "nao_declarou",
-  detalhe: "o modelo respondeu com texto solto, fora da tool responder",
 };
 
 type Execucao = {
@@ -54,7 +48,7 @@ type Execucao = {
 };
 
 type Andamento = {
-  readonly iteracoes: number;
+  readonly chamadasAoModelo: number;
   readonly resultadosDeTools: readonly ResultadoDeTool[];
   readonly trace: readonly PassoDoTurno[];
 };
@@ -64,6 +58,18 @@ type ToolExecutada = {
   readonly passo: PassoDaTool;
 };
 
+const MODELO_NAO_DECLAROU: PassoDaResposta = {
+  etapa: "resposta",
+  resultado: "nao_declarou",
+  detalhe: "o modelo respondeu com texto solto, fora da tool responder",
+};
+
+const LIMITE_ATINGIDO = semDeclaracao(RESPOSTA_DO_LIMITE_DE_ITERACOES, {
+  etapa: "resposta",
+  resultado: "limite_de_iteracoes",
+  detalhe: `o modelo pediu tools ${String(LIMITE_DE_ITERACOES)} vezes sem responder`,
+});
+
 export function executarTurno(
   turno: TurnoPronto,
   modelo: AgentStep,
@@ -71,7 +77,7 @@ export function executarTurno(
 ): Promise<RespostaDoTurno> {
   return decidirAteResponder(
     { turno, modelo, chamados },
-    { iteracoes: 0, resultadosDeTools: [], trace: turno.trace },
+    { chamadasAoModelo: 0, resultadosDeTools: [], trace: turno.trace },
   );
 }
 
@@ -85,40 +91,30 @@ async function decidirAteResponder(
     chamadosVencidos: turno.chamadosVencidos,
     resultadosDeTools: andamento.resultadosDeTools,
   });
-  if (decisao.tipo !== "tools") {
-    const { passos, ...resposta } = traduzirDecisao(decisao);
-    return { ...resposta, trace: [...andamento.trace, ...passos] };
-  }
-  if (andamento.iteracoes + 1 === LIMITE_DE_ITERACOES) {
-    return {
-      mensagem: RESPOSTA_DO_LIMITE_DE_ITERACOES,
-      declaracao: null,
-      confianca: "baixa",
-      trace: [
-        ...andamento.trace,
-        {
-          etapa: "resposta",
-          resultado: "limite_de_iteracoes",
-          detalhe: `o modelo pediu tools ${String(LIMITE_DE_ITERACOES)} vezes sem responder`,
-        },
-      ],
-    };
-  }
+  const chamadasAoModelo = andamento.chamadasAoModelo + 1;
+
+  if (decisao.tipo !== "tools") return concluir(andamento, traduzirDecisao(decisao));
+  if (chamadasAoModelo === LIMITE_DE_ITERACOES) return concluir(andamento, LIMITE_ATINGIDO);
+
   const executadas = await Promise.all(
     decisao.chamadas.map((chamada) => executarTool(chamada, turno.usuario, chamados)),
   );
-  return decidirAteResponder(execucao, registrar(andamento, executadas));
+  return decidirAteResponder(execucao, registrar({ ...andamento, chamadasAoModelo }, executadas));
 }
 
 function registrar(andamento: Andamento, executadas: readonly ToolExecutada[]): Andamento {
   return {
-    iteracoes: andamento.iteracoes + 1,
+    ...andamento,
     resultadosDeTools: [
       ...andamento.resultadosDeTools,
       ...executadas.map((executada) => executada.resultado),
     ],
     trace: [...andamento.trace, ...executadas.map((executada) => executada.passo)],
   };
+}
+
+function concluir(andamento: Andamento, { passos, ...resposta }: Conclusao): RespostaDoTurno {
+  return { ...resposta, trace: [...andamento.trace, ...passos] };
 }
 
 async function executarTool(
@@ -140,7 +136,7 @@ async function executarTool(
   };
 }
 
-function traduzirDecisao(decisao: DecisaoFinal): SaidaDoModelo {
+function traduzirDecisao(decisao: DecisaoFinal): Conclusao {
   switch (decisao.tipo) {
     case "responder":
       return {
@@ -150,11 +146,10 @@ function traduzirDecisao(decisao: DecisaoFinal): SaidaDoModelo {
         passos: [],
       };
     case "texto_solto":
-      return {
-        mensagem: decisao.texto,
-        declaracao: null,
-        confianca: "baixa",
-        passos: [MODELO_NAO_DECLAROU],
-      };
+      return semDeclaracao(decisao.texto, MODELO_NAO_DECLAROU);
   }
+}
+
+function semDeclaracao(mensagem: string, motivo: PassoDaResposta): Conclusao {
+  return { mensagem, declaracao: null, confianca: "baixa", passos: [motivo] };
 }
