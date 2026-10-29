@@ -1,4 +1,4 @@
-import type { AgentStep, Confianca, Declaracao } from "./agent-step.js";
+import type { AgentStep, Confianca, Decisao, Declaracao } from "./agent-step.js";
 import type { PassoDoTrace, TurnoPronto } from "./guardas.js";
 
 export type PassoDaResposta = {
@@ -7,11 +7,23 @@ export type PassoDaResposta = {
   readonly detalhe: string;
 };
 
+export type PassoDoTurno = PassoDoTrace | PassoDaResposta;
+
 export type RespostaDoTurno = {
   readonly mensagem: string;
   readonly declaracao: Declaracao | null;
   readonly confianca: Confianca;
-  readonly trace: readonly (PassoDoTrace | PassoDaResposta)[];
+  readonly trace: readonly PassoDoTurno[];
+};
+
+type SaidaDoModelo = Omit<RespostaDoTurno, "trace"> & {
+  readonly passos: readonly PassoDaResposta[];
+};
+
+const MODELO_NAO_DECLAROU: PassoDaResposta = {
+  etapa: "resposta",
+  resultado: "nao_declarou",
+  detalhe: "o modelo respondeu com texto solto, fora da tool responder",
 };
 
 export async function executarTurno(
@@ -22,27 +34,25 @@ export async function executarTurno(
     mensagem: turno.mensagem,
     chamadosVencidos: turno.chamadosVencidos,
   });
+  const { passos, ...resposta } = lerSaida(decisao);
+  return { ...resposta, trace: [...turno.trace, ...passos] };
+}
+
+function lerSaida(decisao: Decisao): SaidaDoModelo {
   switch (decisao.tipo) {
     case "responder":
       return {
         mensagem: decisao.mensagem,
         declaracao: decisao.declaracao,
         confianca: decisao.declaracao.confianca,
-        trace: turno.trace,
+        passos: [],
       };
     case "texto_solto":
       return {
         mensagem: decisao.texto,
         declaracao: null,
         confianca: "baixa",
-        trace: [
-          ...turno.trace,
-          {
-            etapa: "resposta",
-            resultado: "nao_declarou",
-            detalhe: "o modelo respondeu com texto solto, fora da tool responder",
-          },
-        ],
+        passos: [MODELO_NAO_DECLAROU],
       };
   }
 }
