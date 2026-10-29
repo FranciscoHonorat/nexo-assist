@@ -159,7 +159,10 @@ describe("Tool obter_chamado: o LLM propõe o id, o código valida antes de cons
 
     expect(consultas).toEqual(["listar"]);
     expect(modelo.contextosRecebidos[1]?.resultadosDeTools).toEqual([
-      { tool: "obter_chamado", erro: { motivo: "formato_invalido", recebido: "abc" } },
+      {
+        tool: "obter_chamado",
+        resposta: { ok: false, erro: { motivo: "formato_invalido", recebido: "abc" } },
+      },
     ]);
     expect(resposta.trace).toContainEqual({
       etapa: "tool",
@@ -180,7 +183,7 @@ describe("Tool obter_chamado: o LLM propõe o id, o código valida antes de cons
 
     expect(consultas).toEqual(["listar", "obter"]);
     expect(modelo.contextosRecebidos[1]?.resultadosDeTools).toEqual([
-      { tool: "obter_chamado", chamado: incidenteDaAna },
+      { tool: "obter_chamado", resposta: { ok: true, valor: incidenteDaAna } },
     ]);
     expect(resposta.trace).toContainEqual({
       etapa: "tool",

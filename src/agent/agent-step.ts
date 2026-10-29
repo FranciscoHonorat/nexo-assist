@@ -1,4 +1,5 @@
 import type { Chamado } from "../domain/chamado.js";
+import type { Resultado } from "../domain/resultado.js";
 import type { ErroTicketId } from "../domain/ticket-id.js";
 
 export type Confianca = "alta" | "media" | "baixa";
@@ -15,8 +16,10 @@ export type ChamadaDeTool =
 
 export type ResultadoDeTool =
   | { readonly tool: "consultar_chamados"; readonly chamados: readonly Chamado[] }
-  | { readonly tool: "obter_chamado"; readonly chamado: Chamado }
-  | { readonly tool: "obter_chamado"; readonly erro: ErroTicketId };
+  | {
+      readonly tool: "obter_chamado";
+      readonly resposta: Resultado<Chamado, ErroTicketId>;
+    };
 
 export type DecisaoFinal =
   | {

@@ -49,14 +49,14 @@ async function obterChamado(
   const lido = lerTicketId(id);
   if (!lido.ok) {
     return {
-      resultado: { tool: "obter_chamado", erro: lido.erro },
+      resultado: { tool: "obter_chamado", resposta: lido },
       trace: { resultado: "argumentos_invalidos", detalhe: `id "${id}" fora do formato` },
     };
   }
   const consulta = await chamados.obter(lido.valor, usuario);
   if (!consulta.ok) throw new Error("obter_chamado sem sucesso: ainda sem tratamento");
   return {
-    resultado: { tool: "obter_chamado", chamado: consulta.valor },
+    resultado: { tool: "obter_chamado", resposta: consulta },
     trace: { resultado: "executou", detalhe: `${consulta.valor.id} encontrado` },
   };
 }
