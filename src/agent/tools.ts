@@ -1,4 +1,6 @@
-import { lerTicketId } from "../domain/ticket-id.js";
+import type { Chamado } from "../domain/chamado.js";
+import type { Resultado } from "../domain/resultado.js";
+import { lerTicketId, type ErroTicketId } from "../domain/ticket-id.js";
 import type { UserId } from "../domain/user-id.js";
 import type { TicketClient } from "../tickets/ticket-client.js";
 import type { ChamadaDeTool, ResultadoDeTool } from "./agent-step.js";
@@ -41,23 +43,34 @@ async function consultarChamados(usuario: UserId, chamados: TicketClient): Promi
   };
 }
 
+type RespostaDaBusca = Resultado<Chamado, ErroTicketId>;
+
 async function obterChamado(
   id: string,
   usuario: UserId,
   chamados: TicketClient,
 ): Promise<ToolExecutada> {
+  const resposta = await buscarPorId(id, usuario, chamados);
+  return { resultado: { tool: "obter_chamado", resposta }, trace: descreverBusca(resposta) };
+}
+
+async function buscarPorId(
+  id: string,
+  usuario: UserId,
+  chamados: TicketClient,
+): Promise<RespostaDaBusca> {
   const lido = lerTicketId(id);
-  if (!lido.ok) {
-    return {
-      resultado: { tool: "obter_chamado", resposta: lido },
-      trace: { resultado: "argumentos_invalidos", detalhe: `id "${id}" fora do formato` },
-    };
-  }
+  if (!lido.ok) return lido;
   const consulta = await chamados.obter(lido.valor, usuario);
   if (!consulta.ok) throw new Error("obter_chamado sem sucesso: ainda sem tratamento");
+  return consulta;
+}
+
+function descreverBusca(resposta: RespostaDaBusca): ToolExecutada["trace"] {
+  if (resposta.ok) return { resultado: "executou", detalhe: `${resposta.valor.id} encontrado` };
   return {
-    resultado: { tool: "obter_chamado", resposta: consulta },
-    trace: { resultado: "executou", detalhe: `${consulta.valor.id} encontrado` },
+    resultado: "argumentos_invalidos",
+    detalhe: `id "${resposta.erro.recebido}" fora do formato`,
   };
 }
 
