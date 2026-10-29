@@ -9,7 +9,7 @@ import { agentStepRoteirizado } from "./roteirizado.js";
 import { executarTurno } from "./turno.js";
 
 async function turnoDaAna(mensagem: string) {
-  const turno = valorDe(
+  return valorDe(
     await prepararTurno(
       {
         usuario: ana,
@@ -21,7 +21,6 @@ async function turnoDaAna(mensagem: string) {
       ticketClientEmMemoria({ chamados: [] }),
     ),
   );
-  return turno;
 }
 
 const declaracaoDaSaudacao = {
