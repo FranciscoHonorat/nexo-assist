@@ -17,14 +17,18 @@ import { agentStepRoteirizado, type AgentStepRoteirizado } from "./roteirizado.j
 import type { PassoDaTool } from "./tools.js";
 import { executarTurno, LIMITE_DE_ITERACOES, RESPOSTA_DO_LIMITE_DE_ITERACOES } from "./turno.js";
 
-async function cenarioDaAna(mensagem: string, chamados: readonly Chamado[] = []) {
+async function cenarioDaAna(
+  mensagem: string,
+  chamados: readonly Chamado[] = [],
+  { foraDoAr = false } = {},
+) {
   const consultas: Operacao[] = [];
   const cliente = ticketClientEmMemoria(
     { chamados },
     {
       falhar: (operacao) => {
         consultas.push(operacao);
-        return undefined;
+        return foraDoAr ? "antes" : undefined;
       },
     },
   );
@@ -220,6 +224,30 @@ describe("Tool obter_chamado: o LLM propõe o id, o código valida antes de cons
     ]);
     expect(resposta.trace).toContainEqual(
       passoDeTool("obter_chamado", "executou", "INC-20150 não encontrado"),
+    );
+  });
+});
+
+describe("Legado fora do ar durante uma tool: o turno segue e o modelo fica sabendo", () => {
+  it("Dado o serviço de chamados fora do ar, Quando o modelo consulta os chamados, Então recebe indisponível e ainda responde", async () => {
+    const { turno, chamados } = await cenarioDaAna("e meus chamados?", [incidenteDaAna], {
+      foraDoAr: true,
+    });
+    const modelo = agentStepRoteirizado([
+      chamaTools({ tool: "consultar_chamados" }),
+      responde("O sistema de chamados está fora do ar agora. Quer que eu chame um analista?"),
+    ]);
+
+    const resposta = await executarTurno(turno, modelo, chamados);
+
+    expect(resposta.mensagem).toBe(
+      "O sistema de chamados está fora do ar agora. Quer que eu chame um analista?",
+    );
+    expect(vistoDepoisDasTools(modelo)).toEqual([
+      { tool: "consultar_chamados", resposta: { ok: false, erro: { motivo: "indisponivel" } } },
+    ]);
+    expect(resposta.trace).toContainEqual(
+      passoDeTool("consultar_chamados", "indisponivel", "serviço de chamados indisponível"),
     );
   });
 });

@@ -5,6 +5,7 @@ import type { UserId } from "../domain/user-id.js";
 import {
   ehIndisponivel,
   type ErroDeConsulta,
+  type ErroDeInfraestrutura,
   type TicketClient,
 } from "../tickets/ticket-client.js";
 import type { ChamadaDeTool, ResultadoDeTool } from "./agent-step.js";
@@ -12,9 +13,14 @@ import type { ChamadaDeTool, ResultadoDeTool } from "./agent-step.js";
 export type PassoDaTool = {
   readonly etapa: "tool";
   readonly nome: ChamadaDeTool["tool"];
-  readonly resultado: "executou" | "argumentos_invalidos";
+  readonly resultado: "executou" | "argumentos_invalidos" | "indisponivel";
   readonly detalhe: string;
 };
+
+const SERVICO_INDISPONIVEL = {
+  resultado: "indisponivel",
+  detalhe: "serviço de chamados indisponível",
+} as const;
 
 export type ToolExecutada = {
   readonly resultado: ResultadoDeTool;
@@ -36,16 +42,15 @@ export async function executarTool(
 
 async function consultarChamados(usuario: UserId, chamados: TicketClient): Promise<ToolExecutada> {
   const resposta = await chamados.listar(usuario);
-  if (!resposta.ok) throw new Error("legado fora do ar durante uma tool: ainda sem tratamento");
-  return {
-    resultado: { tool: "consultar_chamados", resposta },
-    trace: descreverLista(resposta.valor),
-  };
+  return { resultado: { tool: "consultar_chamados", resposta }, trace: descreverLista(resposta) };
 }
 
-function descreverLista(lista: readonly Chamado[]): ToolExecutada["trace"] {
-  const ids = lista.map((chamado) => chamado.id).join(", ");
-  return { resultado: "executou", detalhe: `${String(lista.length)} chamados: ${ids}` };
+function descreverLista(
+  resposta: Resultado<readonly Chamado[], ErroDeInfraestrutura>,
+): ToolExecutada["trace"] {
+  if (!resposta.ok) return SERVICO_INDISPONIVEL;
+  const ids = resposta.valor.map((chamado) => chamado.id).join(", ");
+  return { resultado: "executou", detalhe: `${String(resposta.valor.length)} chamados: ${ids}` };
 }
 
 type RespostaDaBusca = Resultado<Chamado, ErroTicketId | ErroDeConsulta>;

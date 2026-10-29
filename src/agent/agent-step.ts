@@ -1,7 +1,7 @@
 import type { Chamado } from "../domain/chamado.js";
 import type { Resultado } from "../domain/resultado.js";
 import type { ErroTicketId } from "../domain/ticket-id.js";
-import type { ErroDeConsulta } from "../tickets/ticket-client.js";
+import type { ErroDeConsulta, ErroDeInfraestrutura } from "../tickets/ticket-client.js";
 
 export type Confianca = "alta" | "media" | "baixa";
 
@@ -18,7 +18,7 @@ export type ChamadaDeTool =
 export type ResultadoDeTool =
   | {
       readonly tool: "consultar_chamados";
-      readonly resposta: Resultado<readonly Chamado[], never>;
+      readonly resposta: Resultado<readonly Chamado[], ErroDeInfraestrutura>;
     }
   | {
       readonly tool: "obter_chamado";
