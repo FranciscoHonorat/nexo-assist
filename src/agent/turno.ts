@@ -15,9 +15,12 @@ export const LIMITE_DE_ITERACOES = 5;
 export const RESPOSTA_DO_LIMITE_DE_ITERACOES =
   "Não consegui concluir seu pedido agora. Se quiser, posso chamar um analista para te ajudar.";
 
+export const RESPOSTA_DA_RECUSA =
+  "Não consigo ajudar com esse pedido por aqui. Se for um assunto de TI, posso chamar um analista para você.";
+
 export type PassoDaResposta = {
   readonly etapa: "resposta";
-  readonly resultado: "nao_declarou" | "limite_de_iteracoes";
+  readonly resultado: "nao_declarou" | "limite_de_iteracoes" | "recusada";
   readonly detalhe: string;
 };
 
@@ -46,13 +49,19 @@ type Andamento = {
   readonly trace: readonly PassoDoTurno[];
 };
 
-const MODELO_NAO_DECLAROU: PassoDaResposta = {
+const PASSO_SEM_DECLARACAO: PassoDaResposta = {
   etapa: "resposta",
   resultado: "nao_declarou",
   detalhe: "o modelo respondeu com texto solto, fora da tool responder",
 };
 
-const LIMITE_ATINGIDO = semDeclaracao(RESPOSTA_DO_LIMITE_DE_ITERACOES, {
+const CONCLUSAO_DA_RECUSA = semDeclaracao(RESPOSTA_DA_RECUSA, {
+  etapa: "resposta",
+  resultado: "recusada",
+  detalhe: "o modelo recusou responder",
+});
+
+const CONCLUSAO_DO_LIMITE = semDeclaracao(RESPOSTA_DO_LIMITE_DE_ITERACOES, {
   etapa: "resposta",
   resultado: "limite_de_iteracoes",
   detalhe: `o modelo pediu tools ${String(LIMITE_DE_ITERACOES)} vezes sem responder`,
@@ -82,7 +91,7 @@ async function decidirAteResponder(
   const chamadasAoModelo = andamento.chamadasAoModelo + 1;
 
   if (decisao.tipo !== "tools") return concluir(andamento, traduzirDecisao(decisao));
-  if (chamadasAoModelo === LIMITE_DE_ITERACOES) return concluir(andamento, LIMITE_ATINGIDO);
+  if (chamadasAoModelo === LIMITE_DE_ITERACOES) return concluir(andamento, CONCLUSAO_DO_LIMITE);
 
   const executadas = await Promise.all(
     decisao.chamadas.map((chamada) => executarTool(chamada, turno.usuario, chamados)),
@@ -115,7 +124,9 @@ function traduzirDecisao(decisao: DecisaoFinal): Conclusao {
         passos: [],
       };
     case "texto_solto":
-      return semDeclaracao(decisao.texto, MODELO_NAO_DECLAROU);
+      return semDeclaracao(decisao.texto, PASSO_SEM_DECLARACAO);
+    case "recusa":
+      return CONCLUSAO_DA_RECUSA;
   }
 }
 

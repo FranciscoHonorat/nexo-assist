@@ -102,6 +102,39 @@ describe("MastraAgentStep: a resposta do modelo vira uma Decisao", () => {
   });
 });
 
+describe("MastraAgentStep: o que vem malformado do modelo não derruba o turno", () => {
+  it("Dado que o modelo recusa (content-filter), Então a decisão é recusa", async () => {
+    const modelo = modeloQueResponde({ conteudo: [], fim: "content-filter" });
+
+    expect(await passo(modelo).decidir(contexto)).toEqual({ tipo: "recusa" });
+  });
+
+  it("Dado um responder com a declaração inválida, Então a mensagem vira texto solto", async () => {
+    const modelo = modeloQueResponde({
+      conteudo: [
+        chamada("toolu_1", "responder", {
+          declaracao: { entendeu: "algo", confianca: "talvez" },
+          mensagem: "Está aberto.",
+        }),
+      ],
+    });
+
+    expect(await passo(modelo).decidir(contexto)).toEqual({
+      tipo: "texto_solto",
+      texto: "Está aberto.",
+    });
+  });
+
+  it("Dado um obter_chamado sem id, Então a chamada segue com id vazio para o domínio recusar", async () => {
+    const modelo = modeloQueResponde({ conteudo: [chamada("toolu_1", "obter_chamado", {})] });
+
+    expect(await passo(modelo).decidir(contexto)).toEqual({
+      tipo: "tools",
+      chamadas: [{ id: "toolu_1", tool: "obter_chamado", argumentos: { id: "" } }],
+    });
+  });
+});
+
 describe("MastraAgentStep: o histórico do turno volta exato para o modelo", () => {
   it("Dado uma rodada de tools, Quando o modelo decide de novo, Então recebe o próprio raciocínio, a chamada e o resultado ligado ao mesmo id", async () => {
     const modelo = modeloQueResponde(

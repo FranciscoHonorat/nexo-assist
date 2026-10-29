@@ -28,6 +28,7 @@ const declaracao = z.object({
 const argumentosDoResponder = z.object({ declaracao, mensagem: z.string() }) satisfies z.ZodType<
   Omit<Extract<Decisao, { tipo: "responder" }>, "tipo">
 >;
+const mensagemSemDeclaracao = z.object({ mensagem: z.string() });
 const argumentosDoObter = z.object({ id: z.string() }) satisfies z.ZodType<
   Extract<ChamadaDeTool, { tool: "obter_chamado" }>["argumentos"]
 >;
@@ -46,7 +47,7 @@ const LEITURA_DAS_CHAMADAS: Record<
   obter_chamado: ({ toolCallId, args }) => ({
     id: toolCallId,
     tool: "obter_chamado",
-    argumentos: argumentosDoObter.parse(args),
+    argumentos: { id: argumentosDoObter.safeParse(args).data?.id ?? "" },
   }),
 };
 
@@ -122,13 +123,19 @@ function mensagensDoModelo(resposta: Resposta): ModelMessage[] {
 }
 
 function paraDecisao(resposta: Resposta): Decisao {
+  if (resposta.finishReason === "content-filter") return { tipo: "recusa" };
   const chamadas = resposta.toolCalls.map(({ payload }) => payload);
   const responder = chamadas.find(({ toolName }) => toolName === "responder");
-  if (responder !== undefined) {
-    return { tipo: "responder", ...argumentosDoResponder.parse(responder.args) };
-  }
+  if (responder !== undefined) return paraResposta(responder.args, resposta.text);
   if (chamadas.length > 0) return { tipo: "tools", chamadas: chamadas.map(paraChamada) };
   return { tipo: "texto_solto", texto: resposta.text };
+}
+
+function paraResposta(argumentos: unknown, texto: string): Decisao {
+  const lidos = argumentosDoResponder.safeParse(argumentos);
+  if (lidos.success) return { tipo: "responder", ...lidos.data };
+  const mensagem = mensagemSemDeclaracao.safeParse(argumentos).data?.mensagem ?? texto;
+  return { tipo: "texto_solto", texto: mensagem };
 }
 
 function paraChamada(chamada: ChamadaDoModelo): ChamadaDeTool {

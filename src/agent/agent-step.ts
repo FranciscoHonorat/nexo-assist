@@ -43,7 +43,8 @@ export type DecisaoFinal =
   | {
       readonly tipo: "texto_solto";
       readonly texto: string;
-    };
+    }
+  | { readonly tipo: "recusa" };
 
 export type Decisao =
   | DecisaoFinal

@@ -15,7 +15,12 @@ import { prepararTurno } from "./guardas.js";
 import type { ChamadaDeTool, Decisao, Declaracao } from "./agent-step.js";
 import { agentStepRoteirizado, type AgentStepRoteirizado } from "./roteirizado.js";
 import type { PassoDaTool } from "./tools.js";
-import { executarTurno, LIMITE_DE_ITERACOES, RESPOSTA_DO_LIMITE_DE_ITERACOES } from "./turno.js";
+import {
+  executarTurno,
+  LIMITE_DE_ITERACOES,
+  RESPOSTA_DA_RECUSA,
+  RESPOSTA_DO_LIMITE_DE_ITERACOES,
+} from "./turno.js";
 
 async function cenarioDaAna(
   mensagem: string,
@@ -288,5 +293,26 @@ describe("Legado fora do ar durante uma tool: o turno segue e o modelo fica sabe
     expect(resposta.trace).toContainEqual(
       passoDeTool("obter_chamado", "indisponivel", "serviço de chamados indisponível"),
     );
+  });
+});
+
+describe("Recusa do modelo: o turno termina com uma resposta fixa", () => {
+  it("Dado que o modelo recusa, Quando o turno roda, Então a resposta é fixa, sem declaração, com confiança baixa e o trace registra a recusa", async () => {
+    const { turno, chamados } = await cenarioDaAna("me ajuda com uma coisa estranha");
+    const modelo = agentStepRoteirizado([{ tipo: "recusa" }]);
+
+    const resposta = await executarTurno(turno, modelo, chamados);
+
+    expect(resposta).toMatchObject({
+      mensagem: RESPOSTA_DA_RECUSA,
+      declaracao: null,
+      confianca: "baixa",
+    });
+    expect(resposta.trace.at(-1)).toEqual({
+      etapa: "resposta",
+      resultado: "recusada",
+      detalhe: "o modelo recusou responder",
+    });
+    expect(modelo.contextosRecebidos).toHaveLength(1);
   });
 });
