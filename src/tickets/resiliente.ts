@@ -1,5 +1,6 @@
 import type { Resultado } from "../domain/resultado.js";
-import { ehIndisponivel, envolverOperacoes, type TicketClient } from "./ticket-client.js";
+import { envolverOperacoes, type TicketClient } from "./ticket-client.js";
+import { ehIndisponivel } from "../infraestrutura/indisponivel.js";
 
 export type PoliticaDeRetry = {
   readonly tentativas: number;

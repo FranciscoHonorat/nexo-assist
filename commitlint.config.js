@@ -4,7 +4,19 @@ export default {
     "scope-enum": [
       2,
       "always",
-      ["domain", "tickets", "agent", "api", "ui", "db", "ci", "deps", "docs"],
+      [
+        "domain",
+        "tickets",
+        "conversas",
+        "agent",
+        "arquitetura",
+        "api",
+        "ui",
+        "db",
+        "ci",
+        "deps",
+        "docs",
+      ],
     ],
   },
 };

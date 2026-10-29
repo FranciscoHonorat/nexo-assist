@@ -4,12 +4,12 @@ import { MINUTO } from "../domain/tempo.js";
 import { valorDe } from "../testes/valor-de.js";
 import type { Chamado } from "../domain/chamado.js";
 import {
-  ana,
   incidenteDaAna,
   incidenteDoJoao,
   requisicaoDaAna,
   t1,
 } from "../tickets/contrato/fixtures.js";
+import { ana } from "../testes/usuarios.js";
 import { ticketClientEmMemoria, type Operacao } from "../tickets/em-memoria.js";
 import { prepararTurno } from "./guardas.js";
 import type { ChamadaDeTool, Decisao, Declaracao } from "./agent-step.js";

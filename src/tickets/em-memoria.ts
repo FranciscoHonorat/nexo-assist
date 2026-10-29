@@ -5,13 +5,12 @@ import { encadear, falha, sucesso, type Resultado } from "../domain/resultado.js
 import { lerTicketId, type TicketId, type TipoChamado } from "../domain/ticket-id.js";
 import type { UserId } from "../domain/user-id.js";
 import {
-  INDISPONIVEL,
   type ErroDeComplementacao,
   type ErroDeConsulta,
-  type ErroDeInfraestrutura,
   type EstadoInicial,
   type TicketClient,
 } from "./ticket-client.js";
+import { INDISPONIVEL, type ErroDeInfraestrutura } from "../infraestrutura/indisponivel.js";
 
 const PREFIXO_POR_TIPO = {
   incidente: "INC",

@@ -4,20 +4,19 @@ import { lerTicketId } from "../../domain/ticket-id.js";
 import { DIA, MINUTO } from "../../domain/tempo.js";
 import {
   RASCUNHO_1,
-  ana,
   antesDeT1,
   chamadosIniciais,
   complementoConfirmadoDaAna,
   existente,
   incidenteDaAna,
   incidenteDoJoao,
-  joao,
   notebookLento,
   senhaDoSap,
   t0,
   t1,
   type Fabrica,
 } from "./fixtures.js";
+import { ana, joao } from "../../testes/usuarios.js";
 
 export function cenariosDeComplemento(fabricar: Fabrica): void {
   const comChamados = () => fabricar({ chamados: chamadosIniciais });

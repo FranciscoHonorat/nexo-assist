@@ -1,20 +1,13 @@
 import { and, asc, eq, inArray, sql } from "drizzle-orm";
-import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { alterarStatusDoChamado, complementarChamado, type Chamado } from "../../domain/chamado.js";
 import { falha, sucesso, type Resultado } from "../../domain/resultado.js";
 import type { TicketId, TipoChamado } from "../../domain/ticket-id.js";
 import type { UserId } from "../../domain/user-id.js";
-import {
-  envolverOperacoes,
-  INDISPONIVEL,
-  type ErroDeConsulta,
-  type ErroDeInfraestrutura,
-  type TicketClient,
-} from "../ticket-client.js";
+import { envolverOperacoes, type ErroDeConsulta, type TicketClient } from "../ticket-client.js";
+import { INDISPONIVEL, type ErroDeInfraestrutura } from "../../infraestrutura/indisponivel.js";
+import type { Banco } from "../../infraestrutura/banco.js";
 import { chamados, complementos, SEQUENCIA_POR_TIPO } from "./esquema.js";
-import { ehFalhaDeInfraestrutura } from "./falhas.js";
-
-export type Banco = PgDatabase<PgQueryResultHKT>;
+import { ehFalhaDeInfraestrutura } from "../../infraestrutura/falhas-do-postgres.js";
 
 type LinhaDoChamado = typeof chamados.$inferSelect;
 type LinhaDoComplemento = typeof complementos.$inferSelect;

@@ -1,6 +1,7 @@
 import { getTableName } from "drizzle-orm";
 import { chamados, complementos, SEQUENCIA_POR_TIPO } from "../tickets/postgres/esquema.js";
-import { ticketClientPostgres, type Banco } from "../tickets/postgres/cliente.js";
+import type { Banco } from "../infraestrutura/banco.js";
+import { ticketClientPostgres } from "../tickets/postgres/cliente.js";
 import type { EstadoInicial, TicketClient } from "../tickets/ticket-client.js";
 
 const LIMPEZA = [

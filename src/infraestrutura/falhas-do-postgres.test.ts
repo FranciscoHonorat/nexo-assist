@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ehFalhaDeInfraestrutura } from "./falhas.js";
+import { ehFalhaDeInfraestrutura } from "./falhas-do-postgres.js";
 
 function comCodigo(code: string, message = "falha"): Error {
   return Object.assign(new Error(message), { code });

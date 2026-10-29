@@ -3,11 +3,10 @@ import { lerRascunhoId } from "../../domain/rascunho-id.js";
 import { confirmar, criarRascunho } from "../../domain/rascunho.js";
 import { valorDe } from "../../testes/valor-de.js";
 import { lerTicketId, type TicketId } from "../../domain/ticket-id.js";
-import { lerUserId, type UserId } from "../../domain/user-id.js";
+import type { UserId } from "../../domain/user-id.js";
 import type { EstadoInicial, TicketClient } from "../ticket-client.js";
+import { ana, joao } from "../../testes/usuarios.js";
 
-export const ana = valorDe(lerUserId("ana@nexo.com"));
-export const joao = valorDe(lerUserId("joao@nexo.com"));
 export const t0 = new Date("2026-10-22T10:00:00Z");
 export const t1 = new Date("2026-10-28T10:00:00Z");
 export const antesDeT1 = (milissegundos: number) => new Date(t1.getTime() - milissegundos);

@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { valorDe } from "../testes/valor-de.js";
 import {
-  ana,
   chamadosIniciais,
   complementoConfirmadoDaAna,
   incidenteDaAna,
@@ -10,6 +9,7 @@ import {
   rascunhoConfirmadoDaAna,
   t1,
 } from "./contrato/fixtures.js";
+import { ana } from "../testes/usuarios.js";
 import { verificarContratoDoTicketClient } from "./contrato/index.js";
 import { ticketClientEmMemoria, type FalhaSimulada, type Operacao } from "./em-memoria.js";
 

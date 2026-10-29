@@ -1,7 +1,8 @@
 import type { Chamado } from "../domain/chamado.js";
 import type { Resultado } from "../domain/resultado.js";
 import type { ErroTicketId } from "../domain/ticket-id.js";
-import type { ErroDeConsulta, ErroDeInfraestrutura } from "../tickets/ticket-client.js";
+import type { ErroDeConsulta } from "../tickets/ticket-client.js";
+import type { ErroDeInfraestrutura } from "../infraestrutura/indisponivel.js";
 
 export type Confianca = "alta" | "media" | "baixa";
 

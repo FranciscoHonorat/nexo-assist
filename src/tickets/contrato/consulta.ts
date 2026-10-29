@@ -2,13 +2,13 @@ import { describe, expect, it } from "vitest";
 import { valorDe } from "../../testes/valor-de.js";
 import { lerTicketId } from "../../domain/ticket-id.js";
 import {
-  ana,
   chamadosIniciais,
   incidenteDaAna,
   incidenteDoJoao,
   requisicaoDaAna,
   type Fabrica,
 } from "./fixtures.js";
+import { ana } from "../../testes/usuarios.js";
 
 export function cenariosDeConsulta(fabricar: Fabrica): void {
   const comChamados = () => fabricar({ chamados: chamadosIniciais });

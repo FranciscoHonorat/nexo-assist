@@ -8,9 +8,9 @@ import type {
   ErroDeAlteracaoDeStatus,
   ErroDeComplementacao,
   ErroDeConsulta,
-  ErroDeInfraestrutura,
   TicketClient,
 } from "./ticket-client.js";
+import type { ErroDeInfraestrutura } from "../infraestrutura/indisponivel.js";
 
 declare const servico: TicketClient;
 declare const ana: UserId;

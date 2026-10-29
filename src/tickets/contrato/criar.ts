@@ -4,7 +4,6 @@ import { tipoDoChamado } from "../../domain/ticket-id.js";
 import {
   RASCUNHO_1,
   RASCUNHO_2,
-  ana,
   chamadosIniciais,
   notebookLento,
   rascunhoConfirmadoDaAna,
@@ -12,6 +11,7 @@ import {
   t1,
   type Fabrica,
 } from "./fixtures.js";
+import { ana } from "../../testes/usuarios.js";
 
 export function cenariosDeCriacao(fabricar: Fabrica): void {
   const comChamados = () => fabricar({ chamados: chamadosIniciais });

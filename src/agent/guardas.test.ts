@@ -10,7 +10,6 @@ import { MINUTO } from "../domain/tempo.js";
 import { lerUserId } from "../domain/user-id.js";
 import { valorDe } from "../testes/valor-de.js";
 import {
-  ana,
   existente,
   incidenteDaAna,
   requisicaoDaAna,
@@ -18,6 +17,7 @@ import {
   t0,
   t1,
 } from "../tickets/contrato/fixtures.js";
+import { ana } from "../testes/usuarios.js";
 import { ticketClientEmMemoria, type Operacao } from "../tickets/em-memoria.js";
 import type { Chamado } from "../domain/chamado.js";
 import {

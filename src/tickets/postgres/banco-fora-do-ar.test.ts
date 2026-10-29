@@ -2,7 +2,6 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
 import { afterAll, describe, expect, it } from "vitest";
 import {
-  ana,
   complementoConfirmadoDaAna,
   incidenteDaAna,
   notebookLento,
@@ -10,6 +9,7 @@ import {
   rascunhoConfirmadoDaAna,
   t1,
 } from "../contrato/fixtures.js";
+import { ana } from "../../testes/usuarios.js";
 import { ticketClientResiliente } from "../resiliente.js";
 import type { TicketClient } from "../ticket-client.js";
 import { ticketClientPostgres } from "./cliente.js";

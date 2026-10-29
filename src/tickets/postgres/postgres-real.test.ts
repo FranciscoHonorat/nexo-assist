@@ -3,7 +3,6 @@ import { novoRascunhoId } from "../../domain/rascunho-id.js";
 import { bancoReal, desconectarBancoReal } from "../../testes/postgres-real.js";
 import { valorDe } from "../../testes/valor-de.js";
 import {
-  ana,
   chamadosIniciais,
   complementoConfirmadoDaAna,
   incidenteDaAna,
@@ -11,6 +10,7 @@ import {
   rascunhoConfirmadoDaAna,
   t1,
 } from "../contrato/fixtures.js";
+import { ana } from "../../testes/usuarios.js";
 import { verificarContratoDoTicketClient } from "../contrato/index.js";
 
 const url = process.env["TEST_DATABASE_URL"];

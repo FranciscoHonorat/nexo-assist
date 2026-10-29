@@ -3,17 +3,16 @@ import { valorDe } from "../../testes/valor-de.js";
 import { lerTicketId } from "../../domain/ticket-id.js";
 import { MINUTO } from "../../domain/tempo.js";
 import {
-  ana,
   chamadosIniciais,
   existente,
   incidenteDaAna,
   incidenteDoJoao,
-  joao,
   notebookLento,
   t0,
   t1,
   type Fabrica,
 } from "./fixtures.js";
+import { ana, joao } from "../../testes/usuarios.js";
 
 export function cenariosDeAlteracaoDeStatus(fabricar: Fabrica): void {
   const comChamados = () => fabricar({ chamados: chamadosIniciais });

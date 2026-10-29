@@ -8,6 +8,7 @@ import type { Complemento, NovoChamado, Rascunho } from "../domain/rascunho.js";
 import type { Resultado } from "../domain/resultado.js";
 import type { TicketId } from "../domain/ticket-id.js";
 import type { UserId } from "../domain/user-id.js";
+import type { ErroDeInfraestrutura } from "../infraestrutura/indisponivel.js";
 
 export type ErroDeConsulta = {
   readonly motivo: "nao_encontrado";
@@ -21,16 +22,6 @@ export type ErroDeAlteracaoDeStatus = ErroDeConsulta | ErroDeConflitoDeStatus;
 export type EstadoInicial = {
   readonly chamados: readonly Chamado[];
 };
-
-export type ErroDeInfraestrutura = {
-  readonly motivo: "indisponivel";
-};
-
-export const INDISPONIVEL: ErroDeInfraestrutura = Object.freeze({ motivo: "indisponivel" });
-
-export function ehIndisponivel(erro: { readonly motivo: string }): erro is ErroDeInfraestrutura {
-  return erro.motivo === INDISPONIVEL.motivo;
-}
 
 type Resposta<T, E = never> = Promise<Resultado<T, E | ErroDeInfraestrutura>>;
 
