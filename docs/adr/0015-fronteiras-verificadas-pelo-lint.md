@@ -16,32 +16,44 @@ assim.
 
 ## Decisão
 
-Duas fronteiras são verificadas pelo ESLint (`no-restricted-imports`), declaradas em
-`src/arquitetura/fronteiras.ts`:
+As fronteiras são verificadas pelo ESLint e declaradas em `src/arquitetura/fronteiras.ts`:
 
 | Fronteira              | Regra                                                                 | Exceções                                              |
 | ---------------------- | --------------------------------------------------------------------- | ----------------------------------------------------- |
 | Do serviço de chamados | Fora de `src/tickets`, só a interface `ticket-client.js` é importável | Testes; `src/composicao`, que monta as implementações |
+| De conversas           | Fora de `src/conversas`, só a interface `conversas.js` é importável   | Testes; `src/composicao`                              |
 | Do domínio             | `src/domain` não importa nada de fora dele                            | Testes                                                |
+| Da infraestrutura      | `src/infraestrutura` não importa `tickets`, `conversas` nem `agent`   | Testes                                                |
 
-- Cada violação mostra uma mensagem que explica a regra e aponta o ADR.
+- Cada fronteira é **uma regra própria** num plugin local (`fronteiras/<nome>`), que verifica
+  `import … from`, `export … from` e `export * from` contra uma `RegExp` do que é proibido e do
+  que é permitido.
+- Cada violação mostra uma mensagem que explica a regra e aponta para a linha do import.
 - Como o lint roda no pre-commit e no CI ([ADR-0007](0007-esteira-de-qualidade.md)), uma
   violação não chega a ser commitada.
-- Uma fronteira nova é uma chamada a `fronteira({ nome, protege, exceto, proibe, porque })`.
+- Uma fronteira nova é uma entrada em `FRONTEIRAS`: `{ nome, protege, exceto, proibe, permite, porque }`.
 - O `eslint.config.js` importa esse módulo `.ts` diretamente, usando o _type stripping_ do
   Node 24.
 
 ## Opções consideradas
 
-| Opção                                   | Quebra o build | Testável | Dependência extra |
-| --------------------------------------- | -------------- | -------- | ----------------- |
-| Convenção documentada                   | Não            | Não      | Nenhuma           |
-| `dependency-cruiser`                    | Sim            | Sim      | Uma ferramenta    |
-| **`no-restricted-imports` (escolhida)** | Sim            | Sim      | Nenhuma           |
+| Opção                                             | Quebra o build | Fronteiras se somam no mesmo arquivo     | Dependência extra |
+| ------------------------------------------------- | -------------- | ---------------------------------------- | ----------------- |
+| Convenção documentada                             | Não            | —                                        | Nenhuma           |
+| `dependency-cruiser`                              | Sim            | Sim                                      | Uma ferramenta    |
+| `no-restricted-imports`, uma config por fronteira | Sim            | **Não**: a última config apaga as outras | Nenhuma           |
+| **Regra própria por fronteira (escolhida)**       | Sim            | Sim                                      | Nenhuma           |
 
 ## Análise de trade-offs
 
-O `no-restricted-imports` olha o texto do import, não o arquivo resolvido. Um import escrito de um
+**Por que não o `no-restricted-imports`:** a primeira versão usava essa regra nativa, uma
+configuração por fronteira. Na configuração flat do ESLint, duas entradas que configuram a mesma
+regra para o mesmo arquivo não se somam: a última substitui a anterior. Com a fronteira de
+conversas valendo para `src/**`, ela apagaria a de chamados em `src/agent` sem aviso. Registrar a
+regra nativa sob vários nomes exigiria `builtinRules`, que o ESLint 10 marca como obsoleta. A
+regra própria tem cerca de 15 linhas e não depende de API interna.
+
+A regra olha o texto do import, não o arquivo resolvido. Um import escrito de um
 jeito inesperado (um alias de caminho, por exemplo) poderia escapar. O projeto não usa aliases, e
 o `dependency-cruiser` fica como alternativa se isso mudar.
 
@@ -55,10 +67,11 @@ detalhes de infraestrutura, e os testes do domínio deixariam de ser lógica pur
 
 ## Como foi verificado
 
-- 13 testes analisam trechos de código escritos no próprio teste, com um ESLint montado só com as
-  regras de fronteira.
-- Arquivos temporários que violavam as duas fronteiras foram barrados pelo `eslint` real do
-  projeto, provando que a configuração usa as regras.
+- 24 testes analisam trechos de código escritos no próprio teste, com um ESLint montado só com as
+  regras de fronteira, incluindo reexportações.
+- Arquivos temporários que violavam as quatro fronteiras foram barrados pelo `eslint` real do
+  projeto. Um mesmo arquivo violando chamados e conversas recebeu os dois erros, provando que as
+  fronteiras se somam.
 
 ## Consequências
 
@@ -71,4 +84,5 @@ detalhes de infraestrutura, e os testes do domínio deixariam de ser lógica pur
 
 1. [x] Fronteira do serviço de chamados.
 2. [x] Fronteira do domínio.
-3. [ ] Fronteira do Mastra, quando o agent existir.
+3. [x] Fronteiras de conversas e da infraestrutura compartilhada.
+4. [ ] Fronteira do Mastra, quando o agent existir.

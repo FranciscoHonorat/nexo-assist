@@ -65,3 +65,53 @@ describe("Fronteira do domínio", () => {
     expect(await violacoes("src/domain/chamado.test.ts", "../testes/valor-de.js")).toEqual([]);
   });
 });
+
+describe("Fronteira de conversas", () => {
+  it.each([
+    "../conversas/em-memoria.js",
+    "../conversas/postgres/cliente.js",
+    "../conversas/contrato/index.js",
+  ])("fora de src/conversas, importar a implementação %s viola a fronteira", async (importacao) => {
+    expect(await violacoes("src/agent/turno.ts", importacao)).toEqual([
+      expect.stringContaining("só pela interface Conversas"),
+    ]);
+  });
+
+  it("fora de src/conversas, importar a interface é permitido", async () => {
+    expect(await violacoes("src/agent/turno.ts", "../conversas/conversas.js")).toEqual([]);
+  });
+
+  it("a composição monta as implementações reais", async () => {
+    expect(
+      await violacoes("src/composicao/servicos.ts", "../conversas/postgres/cliente.js"),
+    ).toEqual([]);
+  });
+});
+
+describe("Fronteira da infraestrutura compartilhada", () => {
+  it.each(["../tickets/ticket-client.js", "../conversas/conversas.js", "../agent/turno.js"])(
+    "a infraestrutura não depende dos módulos de negócio: %s",
+    async (importacao) => {
+      expect(await violacoes("src/infraestrutura/banco.ts", importacao)).toEqual(
+        expect.arrayContaining([expect.stringContaining("A infraestrutura compartilhada")]),
+      );
+    },
+  );
+
+  it("a infraestrutura pode usar o domínio", async () => {
+    expect(await violacoes("src/infraestrutura/banco.ts", "../domain/resultado.js")).toEqual([]);
+  });
+});
+
+describe("Reexportações", () => {
+  it.each([
+    'export { ticketClientEmMemoria } from "../tickets/em-memoria.js";',
+    'export * from "../tickets/em-memoria.js";',
+  ])("reexportar uma implementação também viola a fronteira: %s", async (codigo) => {
+    const [resultado] = await eslint.lintText(`${codigo}\n`, { filePath: "src/agent/turno.ts" });
+
+    expect(resultado?.messages.map((mensagem) => mensagem.message)).toEqual([
+      expect.stringContaining("só pela interface TicketClient"),
+    ]);
+  });
+});
