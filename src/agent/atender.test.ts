@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import type { Conversas } from "../conversas/conversas.js";
 import { conversasEmMemoria } from "../conversas/em-memoria.js";
 import { assumir } from "../domain/conversa.js";
+import { falha } from "../domain/resultado.js";
+import { INDISPONIVEL } from "../infraestrutura/indisponivel.js";
 import { colocarNaFila } from "../testes/conversas.js";
 import { ana, bruno } from "../testes/usuarios.js";
 import { valorDe } from "../testes/valor-de.js";
@@ -121,5 +123,49 @@ describe("Atender uma mensagem: conversa, guardas, agent e histórico juntos", (
     expect(valorDe(await conversas.historico(ana))).toEqual([
       { autor: "funcionario", texto: "meu acesso caiu", enviadaEm: agora },
     ]);
+  });
+});
+
+describe("Atender com o banco de conversas fora do ar", () => {
+  const foraDoAr = () => Promise.resolve(falha(INDISPONIVEL));
+
+  it("Dado que não dá para ler a conversa, Então o atendimento é indisponível e o modelo não é chamado", async () => {
+    const servicos = dependencias();
+    const conversas: Conversas = { ...servicos.conversas, atual: foraDoAr };
+
+    const atendimento = await atenderMensagem(
+      { usuario: ana, mensagem: "bom dia", agora },
+      { ...servicos, conversas },
+    );
+
+    expect(atendimento).toEqual({ ok: false, erro: { motivo: "indisponivel" } });
+    expect(servicos.modelo.contextosRecebidos).toEqual([]);
+  });
+
+  it("Dado que não dá para gravar o turno, Então o atendimento é indisponível", async () => {
+    const servicos = dependencias(
+      agentStepRoteirizado([{ tipo: "responder", declaracao, mensagem: "Bom dia, Ana!" }]),
+    );
+    const conversas: Conversas = { ...servicos.conversas, registrarTurno: foraDoAr };
+
+    const atendimento = await atenderMensagem(
+      { usuario: ana, mensagem: "bom dia", agora },
+      { ...servicos, conversas },
+    );
+
+    expect(atendimento).toEqual({ ok: false, erro: { motivo: "indisponivel" } });
+  });
+
+  it("Dado uma conversa na fila e que não dá para gravar a mensagem, Então o atendimento é indisponível", async () => {
+    const servicos = dependencias();
+    await colocarNaFila(servicos.conversas, ana, agora);
+    const conversas: Conversas = { ...servicos.conversas, registrarMensagem: foraDoAr };
+
+    const atendimento = await atenderMensagem(
+      { usuario: ana, mensagem: "alguém aí?", agora },
+      { ...servicos, conversas },
+    );
+
+    expect(atendimento).toEqual({ ok: false, erro: { motivo: "indisponivel" } });
   });
 });

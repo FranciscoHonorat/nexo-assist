@@ -1,3 +1,6 @@
+import { falha, type Resultado } from "../domain/resultado.js";
+import { INDISPONIVEL, type ErroDeInfraestrutura } from "./indisponivel.js";
+
 const CODIGOS_DE_REDE = new Set([
   "ECONNREFUSED",
   "ECONNRESET",
@@ -44,4 +47,15 @@ function ehFalhaDireta(erro: Error): boolean {
     );
   }
   return MENSAGENS_DE_CONEXAO_ENCERRADA.some((inicio) => erro.message.startsWith(inicio));
+}
+
+export async function protegerDaQuedaDoBanco<T, E extends { readonly motivo: string }>(
+  executar: () => Promise<Resultado<T, E>>,
+): Promise<Resultado<T, E | ErroDeInfraestrutura>> {
+  try {
+    return await executar();
+  } catch (erro) {
+    if (ehFalhaDeInfraestrutura(erro)) return falha(INDISPONIVEL);
+    throw erro;
+  }
 }

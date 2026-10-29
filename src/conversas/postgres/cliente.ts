@@ -1,6 +1,7 @@
 import { and, asc, eq } from "drizzle-orm";
 import { novaConversa, type Conversa, type Controle } from "../../domain/conversa.js";
 import { falha, sucesso } from "../../domain/resultado.js";
+import { protegerDaQuedaDoBanco } from "../../infraestrutura/falhas-do-postgres.js";
 import type { UserId } from "../../domain/user-id.js";
 import type { Banco } from "../../infraestrutura/banco.js";
 import type { Conversas, ErroDeControle, Mensagem } from "../conversas.js";
@@ -13,6 +14,20 @@ type ColunasDoControle = Omit<LinhaDaConversa, "dono">;
 const CONTROLE_MUDOU: ErroDeControle = { motivo: "controle_mudou" };
 
 export function conversasPostgres(db: Banco): Conversas {
+  const operacoes = conversasSemProtecao(db);
+  return {
+    atual: (dono) => protegerDaQuedaDoBanco(() => operacoes.atual(dono)),
+    transicionar: (depois, esperado) =>
+      protegerDaQuedaDoBanco(() => operacoes.transicionar(depois, esperado)),
+    registrarMensagem: (dono, mensagem) =>
+      protegerDaQuedaDoBanco(() => operacoes.registrarMensagem(dono, mensagem)),
+    registrarTurno: (dono, turno) =>
+      protegerDaQuedaDoBanco(() => operacoes.registrarTurno(dono, turno)),
+    historico: (dono) => protegerDaQuedaDoBanco(() => operacoes.historico(dono)),
+  };
+}
+
+function conversasSemProtecao(db: Banco): Conversas {
   return {
     atual: async (dono) => {
       await db

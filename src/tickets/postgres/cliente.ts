@@ -4,10 +4,9 @@ import { falha, sucesso, type Resultado } from "../../domain/resultado.js";
 import type { TicketId, TipoChamado } from "../../domain/ticket-id.js";
 import type { UserId } from "../../domain/user-id.js";
 import { envolverOperacoes, type ErroDeConsulta, type TicketClient } from "../ticket-client.js";
-import { INDISPONIVEL, type ErroDeInfraestrutura } from "../../infraestrutura/indisponivel.js";
 import type { Banco } from "../../infraestrutura/banco.js";
 import { chamados, complementos, SEQUENCIA_POR_TIPO } from "./esquema.js";
-import { ehFalhaDeInfraestrutura } from "../../infraestrutura/falhas-do-postgres.js";
+import { protegerDaQuedaDoBanco } from "../../infraestrutura/falhas-do-postgres.js";
 
 type LinhaDoChamado = typeof chamados.$inferSelect;
 type LinhaDoComplemento = typeof complementos.$inferSelect;
@@ -120,7 +119,7 @@ export function ticketClientPostgres(db: Banco): TicketClient {
     alterarStatus: tentarAlterarStatus,
   };
 
-  return envolverOperacoes(operacoes, protegido);
+  return envolverOperacoes(operacoes, protegerDaQuedaDoBanco);
 }
 
 function paraChamado(linha: LinhaDoChamado, extras: readonly LinhaDoComplemento[]): Chamado {
@@ -135,15 +134,4 @@ function paraChamado(linha: LinhaDoChamado, extras: readonly LinhaDoComplemento[
     atualizadoEm,
     complementos: Object.freeze(extras.map(({ texto, em }) => Object.freeze({ texto, em }))),
   });
-}
-
-async function protegido<T, E extends { readonly motivo: string }>(
-  executar: () => Promise<Resultado<T, E>>,
-): Promise<Resultado<T, E | ErroDeInfraestrutura>> {
-  try {
-    return await executar();
-  } catch (erro) {
-    if (ehFalhaDeInfraestrutura(erro)) return falha(INDISPONIVEL);
-    throw erro;
-  }
 }
