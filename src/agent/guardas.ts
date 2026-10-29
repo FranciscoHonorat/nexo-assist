@@ -4,6 +4,7 @@ import { estaVencido } from "../domain/prazo.js";
 import { falha, sucesso, type Resultado } from "../domain/resultado.js";
 import type { UserId } from "../domain/user-id.js";
 import type { TicketClient } from "../tickets/ticket-client.js";
+import type { MensagemAnterior } from "./agent-step.js";
 
 declare const preparadoPelasGuardas: unique symbol;
 
@@ -44,6 +45,7 @@ export type EntradaDoTurno = {
   readonly usuario: UserId;
   readonly conversa: Conversa<Controle>;
   readonly mensagem: string;
+  readonly anteriores: readonly MensagemAnterior[];
   readonly mensagensNaSessao: number;
   readonly agora: Date;
 };
@@ -52,6 +54,7 @@ export type TurnoPronto = {
   readonly usuario: UserId;
   readonly conversa: Conversa<"agent">;
   readonly mensagem: string;
+  readonly anteriores: readonly MensagemAnterior[];
   readonly agora: Date;
   readonly chamadosVencidos: readonly Chamado[];
   readonly trace: TraceDasGuardas;
@@ -59,7 +62,7 @@ export type TurnoPronto = {
 };
 
 export async function prepararTurno(
-  { usuario, conversa, mensagem, mensagensNaSessao, agora }: EntradaDoTurno,
+  { usuario, conversa, mensagem, anteriores, mensagensNaSessao, agora }: EntradaDoTurno,
   chamados: TicketClient,
 ): Promise<Resultado<TurnoPronto, Interrupcao>> {
   const controle = guardaDoControle(conversa);
@@ -75,6 +78,7 @@ export async function prepararTurno(
       usuario,
       conversa: controle.valor.conversa,
       mensagem,
+      anteriores,
       agora,
       chamadosVencidos: vencidos.chamadosVencidos,
       trace: [controle.valor.passo, limite.valor.passo, vencidos.passo],

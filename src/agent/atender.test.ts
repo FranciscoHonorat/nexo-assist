@@ -9,8 +9,9 @@ import { ana, bruno } from "../testes/usuarios.js";
 import { valorDe } from "../testes/valor-de.js";
 import { ticketClientEmMemoria } from "../tickets/em-memoria.js";
 import type { AgentStep } from "./agent-step.js";
-import { atenderMensagem } from "./atender.js";
+import { atenderMensagem, MENSAGENS_ANTERIORES_NO_CONTEXTO } from "./atender.js";
 import { RESPOSTA_DO_LIMITE } from "./guardas.js";
+import { RESPOSTA_DA_TRANSFERENCIA } from "./turno.js";
 import { agentStepRoteirizado } from "./roteirizado.js";
 
 const agora = new Date("2026-10-28T13:00:00Z");
@@ -63,6 +64,38 @@ describe("Atender uma mensagem: conversa, guardas, agent e histórico juntos", (
     ]);
   });
 
+  it("Dado turnos anteriores na sessão, Quando a Ana manda outra mensagem, Então o modelo recebe a conversa até ali, da mais antiga para a mais nova", async () => {
+    const servicos = dependencias(
+      agentStepRoteirizado([{ tipo: "responder", declaracao, mensagem: "Desde quando?" }]),
+    );
+    await comMensagensNaSessao(servicos.conversas, 2);
+
+    await atenderMensagem({ usuario: ana, mensagem: "desde ontem", agora }, servicos);
+
+    expect(servicos.modelo.contextosRecebidos[0]).toMatchObject({
+      mensagem: "desde ontem",
+      anteriores: [
+        { autor: "funcionario", texto: "mensagem 1" },
+        { autor: "agent", texto: "ok" },
+        { autor: "funcionario", texto: "mensagem 2" },
+        { autor: "agent", texto: "ok" },
+      ],
+    });
+  });
+
+  it("Dado uma sessão longa, Quando a Ana manda outra mensagem, Então o modelo recebe só as últimas mensagens, para o custo por turno não crescer sem limite", async () => {
+    const servicos = dependencias(
+      agentStepRoteirizado([{ tipo: "responder", declaracao, mensagem: "ok" }]),
+    );
+    await comMensagensNaSessao(servicos.conversas, 15);
+
+    await atenderMensagem({ usuario: ana, mensagem: "e agora?", agora }, servicos);
+
+    const anteriores = servicos.modelo.contextosRecebidos[0]?.anteriores ?? [];
+    expect(anteriores).toHaveLength(MENSAGENS_ANTERIORES_NO_CONTEXTO);
+    expect(anteriores.at(-2)).toEqual({ autor: "funcionario", texto: "mensagem 15" });
+  });
+
   it("Dado 30 mensagens já gravadas na sessão, Quando chega a 31ª, Então a resposta é fixa e o modelo não é chamado", async () => {
     const servicos = dependencias();
     await comMensagensNaSessao(servicos.conversas, 30);
@@ -81,6 +114,50 @@ describe("Atender uma mensagem: conversa, guardas, agent e histórico juntos", (
       autor: "agent",
       texto: RESPOSTA_DO_LIMITE,
     });
+  });
+
+  it("Dado que o modelo transfere, Quando o turno termina, Então a conversa vai para a fila com o motivo e o resumo, depois de a resposta ser gravada", async () => {
+    const servicos = dependencias(
+      agentStepRoteirizado([
+        { tipo: "transferir", motivo: "pedido_do_funcionario", resumo: "Ana pediu um analista." },
+      ]),
+    );
+
+    const atendimento = await atenderMensagem(
+      { usuario: ana, mensagem: "quero falar com uma pessoa", agora },
+      servicos,
+    );
+
+    expect(valorDe(atendimento)).toMatchObject({
+      tipo: "resposta",
+      resposta: { mensagem: RESPOSTA_DA_TRANSFERENCIA },
+    });
+    expect(valorDe(await servicos.conversas.atual(ana)).conversa).toEqual({
+      dono: ana,
+      controle: "aguardando",
+      transferencia: {
+        motivo: "pedido_do_funcionario",
+        resumo: "Ana pediu um analista.",
+        pedidaEm: agora,
+      },
+    });
+    expect(valorDe(await servicos.conversas.historico(ana)).at(-1)).toMatchObject({
+      autor: "agent",
+      texto: RESPOSTA_DA_TRANSFERENCIA,
+    });
+  });
+
+  it("Dado uma conversa transferida pelo agent, Quando a Ana manda outra mensagem, Então o agent fica em silêncio", async () => {
+    const servicos = dependencias(
+      agentStepRoteirizado([
+        { tipo: "transferir", motivo: "pedido_do_funcionario", resumo: "Ana pediu um analista." },
+      ]),
+    );
+    await atenderMensagem({ usuario: ana, mensagem: "quero uma pessoa", agora }, servicos);
+
+    expect(
+      valorDe(await atenderMensagem({ usuario: ana, mensagem: "oi?", agora }, servicos)),
+    ).toEqual({ tipo: "silencio", motivo: "conversa_na_fila" });
   });
 
   it("Dado uma conversa na fila, Quando a Ana manda uma mensagem, Então ela fica no histórico para o analista e o agent fica em silêncio", async () => {
@@ -152,6 +229,35 @@ describe("Atender com o banco de conversas fora do ar", () => {
 
     const atendimento = await atenderMensagem(
       { usuario: ana, mensagem: "bom dia", agora },
+      { ...servicos, conversas },
+    );
+
+    expect(atendimento).toEqual({ ok: false, erro: { motivo: "indisponivel" } });
+  });
+
+  it("Dado que não dá para ler o histórico, Então o atendimento é indisponível e o modelo não é chamado", async () => {
+    const servicos = dependencias();
+    const conversas: Conversas = { ...servicos.conversas, historico: foraDoAr };
+
+    const atendimento = await atenderMensagem(
+      { usuario: ana, mensagem: "bom dia", agora },
+      { ...servicos, conversas },
+    );
+
+    expect(atendimento).toEqual({ ok: false, erro: { motivo: "indisponivel" } });
+    expect(servicos.modelo.contextosRecebidos).toEqual([]);
+  });
+
+  it("Dado que o modelo transfere e não dá para gravar a transferência, Então o atendimento é indisponível, para a interface não dizer que um analista foi chamado", async () => {
+    const servicos = dependencias(
+      agentStepRoteirizado([
+        { tipo: "transferir", motivo: "pedido_do_funcionario", resumo: "Ana pediu um analista." },
+      ]),
+    );
+    const conversas: Conversas = { ...servicos.conversas, transicionar: foraDoAr };
+
+    const atendimento = await atenderMensagem(
+      { usuario: ana, mensagem: "quero uma pessoa", agora },
       { ...servicos, conversas },
     );
 

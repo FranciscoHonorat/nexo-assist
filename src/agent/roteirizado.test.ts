@@ -2,7 +2,12 @@ import { describe, expect, it } from "vitest";
 import type { ContextoDoPasso } from "./agent-step.js";
 import { agentStepRoteirizado } from "./roteirizado.js";
 
-const contexto: ContextoDoPasso = { mensagem: "oi", chamadosVencidos: [], resultadosDeTools: [] };
+const contexto: ContextoDoPasso = {
+  mensagem: "oi",
+  anteriores: [],
+  chamadosVencidos: [],
+  resultadosDeTools: [],
+};
 
 describe("Modelo roteirizado: um teste com roteiro curto falha de forma clara", () => {
   it("Dado um roteiro com uma decisão, Quando o modelo é chamado pela segunda vez, Então a promise é rejeitada dizendo onde o roteiro acabou", async () => {

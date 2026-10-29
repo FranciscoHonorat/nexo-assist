@@ -72,6 +72,7 @@ function entrada(conversa: Conversa<Controle>, mensagensNaSessao = 3) {
     usuario: ana,
     conversa,
     mensagem: "meu notebook continua lento",
+    anteriores: [],
     mensagensNaSessao,
     agora: new Date(t1.getTime() + MINUTO),
   };

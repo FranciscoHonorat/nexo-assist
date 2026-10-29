@@ -20,6 +20,7 @@ describe("Guardas: garantias em tempo de compilação", () => {
       usuario: ana,
       conversa,
       mensagem: "oi",
+      anteriores: [],
       agora: new Date(),
       chamadosVencidos: [],
       trace: [],

@@ -1,6 +1,7 @@
 import { MockLanguageModelV4 } from "ai/test";
 import { describe, expect, it } from "vitest";
 import type { ContextoDoPasso } from "../agent-step.js";
+import { requisicaoDaAna } from "../../tickets/contrato/fixtures.js";
 import { mastraAgentStep } from "./mastra-agent-step.js";
 
 type Conteudo = Record<string, unknown>;
@@ -52,6 +53,7 @@ const declaracao = {
 
 const contexto: ContextoDoPasso = {
   mensagem: "e o INC-20311?",
+  anteriores: [],
   chamadosVencidos: [],
   resultadosDeTools: [],
 };
@@ -74,6 +76,29 @@ describe("MastraAgentStep: a resposta do modelo vira uma Decisao", () => {
       tipo: "responder",
       declaracao,
       mensagem: "Ele está aberto.",
+      opcoes: [],
+      chamados: [],
+    });
+  });
+
+  it("Dado um responder com opções e chamados, Então a decisão leva os dois", async () => {
+    const modelo = modeloQueResponde({
+      conteudo: [
+        chamada("toolu_1", "responder", {
+          declaracao,
+          mensagem: "Qual deles?",
+          opcoes: ["O do notebook", "O do monitor"],
+          chamados: ["INC-20311", "REQ-10442"],
+        }),
+      ],
+    });
+
+    expect(await passo(modelo).decidir(contexto)).toEqual({
+      tipo: "responder",
+      declaracao,
+      mensagem: "Qual deles?",
+      opcoes: ["O do notebook", "O do monitor"],
+      chamados: ["INC-20311", "REQ-10442"],
     });
   });
 
@@ -83,6 +108,7 @@ describe("MastraAgentStep: a resposta do modelo vira uma Decisao", () => {
         raciocinio,
         chamada("toolu_1", "consultar_chamados", {}),
         chamada("toolu_2", "obter_chamado", { id: "INC-20311" }),
+        chamada("toolu_3", "buscar_artigos", { consulta: "vpn" }),
       ],
     });
 
@@ -91,7 +117,37 @@ describe("MastraAgentStep: a resposta do modelo vira uma Decisao", () => {
       chamadas: [
         { id: "toolu_1", tool: "consultar_chamados" },
         { id: "toolu_2", tool: "obter_chamado", argumentos: { id: "INC-20311" } },
+        { id: "toolu_3", tool: "buscar_artigos", argumentos: { consulta: "vpn" } },
       ],
+    });
+  });
+
+  it("Dado que o modelo chama transferir_para_analista, Então a decisão é transferir com o motivo e o resumo", async () => {
+    const modelo = modeloQueResponde({
+      conteudo: [
+        chamada("toolu_1", "transferir_para_analista", {
+          motivo: "caso_critico",
+          resumo: "A equipe inteira está sem ERP.",
+        }),
+      ],
+    });
+
+    expect(await passo(modelo).decidir(contexto)).toEqual({
+      tipo: "transferir",
+      motivo: "caso_critico",
+      resumo: "A equipe inteira está sem ERP.",
+    });
+  });
+
+  it("Dado um transferir_para_analista com motivo inválido, Então a transferência acontece mesmo assim, por baixa confiança", async () => {
+    const modelo = modeloQueResponde({
+      conteudo: [chamada("toolu_1", "transferir_para_analista", { motivo: "sei_la" })],
+    });
+
+    expect(await passo(modelo).decidir(contexto)).toEqual({
+      tipo: "transferir",
+      motivo: "baixa_confianca",
+      resumo: "",
     });
   });
 
@@ -123,6 +179,55 @@ describe("MastraAgentStep: o que vem malformado do modelo não derruba o turno",
       tipo: "declaracao_invalida",
       mensagem: "Está aberto.",
       campos: ["declaracao.confianca", "declaracao.porque"],
+    });
+  });
+
+  it("Dado um propor_chamado com categoria fora da lista, Então a chamada segue com os campos inválidos para o código responder ao modelo", async () => {
+    const modelo = modeloQueResponde({
+      conteudo: [
+        chamada("toolu_1", "propor_chamado", {
+          dados: {
+            titulo: "VPN caiu",
+            descricao: "A VPN cai toda hora.",
+            tipo: "incidente",
+            categoria: "vpn",
+            prioridade: "alta",
+            afetados: "so_eu",
+          },
+        }),
+      ],
+    });
+
+    expect(await passo(modelo).decidir(contexto)).toEqual({
+      tipo: "tools",
+      chamadas: [
+        { id: "toolu_1", tool: "propor_chamado", argumentos: { invalidos: ["dados.categoria"] } },
+      ],
+    });
+  });
+
+  it("Dado um propor_chamado sem chamadosConferidos, Então a lista vem vazia", async () => {
+    const dados = {
+      titulo: "VPN caiu",
+      descricao: "A VPN cai toda hora.",
+      tipo: "incidente",
+      categoria: "rede_e_vpn",
+      prioridade: "alta",
+      afetados: "so_eu",
+    } as const;
+    const modelo = modeloQueResponde({
+      conteudo: [chamada("toolu_1", "propor_chamado", { dados })],
+    });
+
+    expect(await passo(modelo).decidir(contexto)).toEqual({
+      tipo: "tools",
+      chamadas: [
+        {
+          id: "toolu_1",
+          tool: "propor_chamado",
+          argumentos: { dados, chamadosConferidos: [] },
+        },
+      ],
     });
   });
 
@@ -183,6 +288,51 @@ describe("MastraAgentStep: o histórico do turno volta exato para o modelo", () 
     });
   });
 
+  it("Dado mensagens anteriores na sessão, Então o modelo as recebe antes da mensagem atual, cada uma com o seu papel", async () => {
+    const modelo = modeloQueResponde({ conteudo: [{ type: "text", text: "Olá!" }] });
+
+    await passo(modelo).decidir({
+      ...contexto,
+      anteriores: [
+        { autor: "funcionario", texto: "meu notebook está lento" },
+        { autor: "agent", texto: "Desde quando?" },
+      ],
+    });
+
+    const prompt = modelo.doGenerateCalls[0]?.prompt ?? [];
+    expect(prompt.map((mensagem) => mensagem.role)).toEqual([
+      "system",
+      "user",
+      "assistant",
+      "user",
+    ]);
+    expect(JSON.stringify(prompt[1])).toContain("meu notebook está lento");
+    expect(JSON.stringify(prompt[2])).toContain("Desde quando?");
+    expect(JSON.stringify(prompt[3])).toContain("e o INC-20311?");
+  });
+
+  it("Dado chamados vencidos do funcionário, Então o modelo os vê junto da mensagem atual", async () => {
+    const modelo = modeloQueResponde({ conteudo: [{ type: "text", text: "Olá!" }] });
+
+    await passo(modelo).decidir({ ...contexto, chamadosVencidos: [requisicaoDaAna] });
+
+    const atual = JSON.stringify(modelo.doGenerateCalls[0]?.prompt.at(-1));
+    expect(atual).toContain("e o INC-20311?");
+    expect(atual).toContain("REQ-10442");
+    expect(atual).toContain("vencido");
+  });
+
+  it("Dado nenhum chamado vencido, Então a mensagem atual vai sozinha, sem contexto extra", async () => {
+    const modelo = modeloQueResponde({ conteudo: [{ type: "text", text: "Olá!" }] });
+
+    await passo(modelo).decidir(contexto);
+
+    expect(modelo.doGenerateCalls[0]?.prompt.at(-1)).toMatchObject({
+      role: "user",
+      content: [{ type: "text", text: "e o INC-20311?" }],
+    });
+  });
+
   it("envia o esforço configurado e deixa o modelo escolher a tool", async () => {
     const modelo = modeloQueResponde({ conteudo: [{ type: "text", text: "Olá!" }] });
 
@@ -193,9 +343,13 @@ describe("MastraAgentStep: o histórico do turno volta exato para o modelo", () 
       providerOptions: { anthropic: { effort: "low" } },
     });
     expect(modelo.doGenerateCalls[0]?.tools?.map((tool) => tool.name).sort()).toEqual([
+      "buscar_artigos",
       "consultar_chamados",
       "obter_chamado",
+      "propor_chamado",
+      "propor_complemento",
       "responder",
+      "transferir_para_analista",
     ]);
   });
 });
