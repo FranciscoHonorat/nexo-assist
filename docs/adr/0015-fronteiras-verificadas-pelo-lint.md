@@ -89,3 +89,5 @@ detalhes de infraestrutura, e os testes do domínio deixariam de ser lógica pur
 2. [x] Fronteira do domínio.
 3. [x] Fronteiras de conversas e da infraestrutura compartilhada.
 4. [x] Fronteira do framework de agent ([ADR-0005](0005-mastra-minimo.md)).
+5. [x] Fronteira da interface: `web/` conhece o servidor só pelo contrato da API
+       ([ADR-0022](0022-borda-http-acesso-e-limites.md)).

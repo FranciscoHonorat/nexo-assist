@@ -55,6 +55,13 @@ poucos pontos auditáveis:
   ter o seu.
 - `comoJson` em `infraestrutura/json.ts`, que afirma que um valor passado por `JSON.stringify` e
   `JSON.parse` é `Json`.
+- O contrato da API (`src/http/contrato.ts`) afirma que o registro gravado do agent tem a forma de
+  `RegistroDoAgent`, e a interface (`web/src/api.ts`) lê as respostas do próprio servidor com
+  `JSON.parse(...) as T`. As duas pontas são do mesmo repositório, e o tipo do contrato é derivado
+  dos tipos que o servidor grava ([ADR-0022](0022-borda-http-acesso-e-limites.md)).
+
+`JsonDe<T>` descreve um valor depois de passar por JSON: datas viram texto e as marcas de
+validação somem (`SemValidacao`, no domínio), porque fora do servidor a marca não existe mais.
 
 As listas fechadas do domínio (categorias, prioridades, afetados, tipos de chamado, motivos de
 transferência, confianças) são constantes `as const`, e os tipos saem delas. Os enums do Postgres

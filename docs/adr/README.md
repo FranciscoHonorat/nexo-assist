@@ -21,9 +21,9 @@ de alteração de status.
 | ADR                                                  | Decisão                                                          | Status | Implementação |
 | ---------------------------------------------------- | ---------------------------------------------------------------- | ------ | ------------- |
 | [0001](0001-servico-de-chamados-in-process.md)       | Serviço de chamados no mesmo processo, atrás de interface        | Aceito | Feito         |
-| [0002](0002-tempo-real-com-sse.md)                   | Tempo real com SSE e EventEmitter; banco como fonte da verdade   | Aceito | Em andamento  |
+| [0002](0002-tempo-real-com-sse.md)                   | Tempo real com SSE e EventEmitter; banco como fonte da verdade   | Aceito | Feito         |
 | [0003](0003-saida-do-agent-via-tool.md)              | Toda saída do agent passa pela tool `responder`                  | Aceito | Em andamento  |
-| [0004](0004-postgres-com-drizzle.md)                 | PostgreSQL com Drizzle; PGlite nos testes                        | Aceito | Em andamento  |
+| [0004](0004-postgres-com-drizzle.md)                 | PostgreSQL com Drizzle; PGlite nos testes                        | Aceito | Feito         |
 | [0005](0005-mastra-minimo.md)                        | Mastra em uso mínimo, contido atrás de `AgentStep`               | Aceito | Feito         |
 | [0006](0006-modelo-de-llm.md)                        | Claude Haiku 5.5 como ponto de partida                           | Aceito | Em andamento  |
 | [0007](0007-esteira-de-qualidade.md)                 | Esteira de qualidade local e no CI; versões fixas                | Aceito | Feito         |
@@ -38,6 +38,8 @@ de alteração de status.
 | [0016](0016-guardas-do-turno.md)                     | Guardas do turno antes do LLM, com marca e trace                 | Aceito | Feito         |
 | [0017](0017-loop-de-tools-no-codigo.md)              | Loop de tools no código, com o modelo decidindo um passo por vez | Aceito | Feito         |
 | [0018](0018-persistencia-das-conversas.md)           | Persistência das conversas, com controle e turno condicionais    | Aceito | Feito         |
-| [0019](0019-acoes-do-agent.md)                       | O modelo propõe, o clique confirma, o código verifica            | Aceito | Em andamento  |
+| [0019](0019-acoes-do-agent.md)                       | O modelo propõe, o clique confirma, o código verifica            | Aceito | Feito         |
 | [0020](0020-central-de-ajuda.md)                     | Central de ajuda com busca por palavras, no código               | Aceito | Em andamento  |
-| [0021](0021-historico-com-eventos-e-console.md)      | Histórico com eventos, mensagens do analista e sessões           | Aceito | Em andamento  |
+| [0021](0021-historico-com-eventos-e-console.md)      | Histórico com eventos, mensagens do analista e sessões           | Aceito | Feito         |
+| [0022](0022-borda-http-acesso-e-limites.md)          | Borda HTTP com Hono, sessão assinada e limites de uso            | Aceito | Feito         |
+| [0023](0023-interface-e-deploy.md)                   | Interface em React servida pelo Node, deploy no Railway          | Aceito | Em andamento  |

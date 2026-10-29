@@ -83,6 +83,6 @@ despertador sabotado para esquecer um aviso, dois cenários falharam.
 ## Itens de ação
 
 1. [x] Definir a interface `EventBus`.
-2. [ ] Endpoint SSE com recuperação do estado ao reconectar (o acompanhamento está pronto; falta o
-       HTTP).
+2. [x] Endpoint SSE com recuperação do estado ao reconectar
+       ([ADR-0022](0022-borda-http-acesso-e-limites.md)).
 3. [x] Testar que nenhuma mensagem se perde numa reconexão.

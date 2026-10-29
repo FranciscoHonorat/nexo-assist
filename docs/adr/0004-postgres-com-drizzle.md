@@ -112,4 +112,5 @@ dialeto (`pgTable` e `sqliteTable`), então trocar de banco depois não sai de g
        `pg_advisory_lock` para os arquivos de teste não migrarem o mesmo banco ao mesmo tempo. Foi
        ele que pegou o `ADD VALUE` de enum que o PGlite aceitava
        ([ADR-0021](0021-historico-com-eventos-e-console.md)).
-6. [ ] Aplicar as migrations na inicialização em produção.
+6. [x] Aplicar as migrations na inicialização em produção, com `pg_advisory_lock`
+       ([ADR-0023](0023-interface-e-deploy.md)).

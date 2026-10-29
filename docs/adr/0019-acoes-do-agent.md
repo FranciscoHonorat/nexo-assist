@@ -130,4 +130,4 @@ complemento. A leitura fica para quando houver essa história.
 4. [x] Transferência como decisão final.
 5. [x] Anexos da resposta e contexto das mensagens anteriores.
 6. [x] Resultado do clique no histórico.
-7. [ ] Endpoints de confirmar e descartar.
+7. [x] Endpoints de confirmar e descartar ([ADR-0022](0022-borda-http-acesso-e-limites.md)).

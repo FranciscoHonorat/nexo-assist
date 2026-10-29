@@ -117,4 +117,5 @@ esperar. Em troca, o analista nunca abre uma conversa vazia.
 3. [x] Resultado do clique no histórico.
 4. [x] Nova sessão.
 5. [x] Casos de uso do console.
-6. [ ] Papel de analista no login e endpoints do console.
+6. [x] Papel de analista no login e endpoints do console
+       ([ADR-0022](0022-borda-http-acesso-e-limites.md)).
