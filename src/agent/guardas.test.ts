@@ -58,11 +58,15 @@ function passou(nome: NomeDaGuarda, detalhe: string): PassoDaGuarda {
   return { etapa: "guarda", nome, resultado: "passou", detalhe };
 }
 
-function interrompeu(nome: NomeDaGuarda, detalhe: string): PassoDaGuarda {
+type GuardaQue<Resultado extends PassoDaGuarda["resultado"]> = {
+  [Nome in NomeDaGuarda]: Resultado extends PassoDaGuarda<Nome>["resultado"] ? Nome : never;
+}[NomeDaGuarda];
+
+function interrompeu(nome: GuardaQue<"interrompeu">, detalhe: string): PassoDaGuarda {
   return { etapa: "guarda", nome, resultado: "interrompeu", detalhe };
 }
 
-function naoVerificou(nome: NomeDaGuarda, detalhe: string): PassoDaGuarda {
+function naoVerificou(nome: GuardaQue<"nao_verificou">, detalhe: string): PassoDaGuarda {
   return { etapa: "guarda", nome, resultado: "nao_verificou", detalhe };
 }
 

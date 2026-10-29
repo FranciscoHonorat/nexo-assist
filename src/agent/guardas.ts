@@ -12,14 +12,22 @@ export const LIMITE_DE_MENSAGENS_POR_SESSAO = 30;
 export const RESPOSTA_DO_LIMITE =
   "Você chegou ao limite de 30 mensagens desta sessão. Se precisar, posso chamar um analista, ou você pode continuar numa nova sessão.";
 
-export type NomeDaGuarda = "controle" | "limite" | "vencidos";
-
-export type PassoDaGuarda = {
-  readonly etapa: "guarda";
-  readonly nome: NomeDaGuarda;
-  readonly resultado: "passou" | "interrompeu" | "nao_verificou";
-  readonly detalhe: string;
+type ResultadosPorGuarda = {
+  controle: "passou" | "interrompeu";
+  limite: "passou" | "interrompeu";
+  vencidos: "passou" | "nao_verificou";
 };
+
+export type NomeDaGuarda = keyof ResultadosPorGuarda;
+
+export type PassoDaGuarda<N extends NomeDaGuarda = NomeDaGuarda> = {
+  [Nome in N]: {
+    readonly etapa: "guarda";
+    readonly nome: Nome;
+    readonly resultado: ResultadosPorGuarda[Nome];
+    readonly detalhe: string;
+  };
+}[N];
 
 type TraceDasGuardas = readonly PassoDaGuarda[];
 
@@ -134,11 +142,11 @@ async function guardaDosVencidos(
   return { chamadosVencidos, passo: passo("vencidos", "passou", detalhe) };
 }
 
-function passo(
-  nome: NomeDaGuarda,
-  resultado: PassoDaGuarda["resultado"],
+function passo<N extends NomeDaGuarda>(
+  nome: N,
+  resultado: ResultadosPorGuarda[N],
   detalhe: string,
-): PassoDaGuarda {
+): PassoDaGuarda<N> {
   return { etapa: "guarda", nome, resultado, detalhe };
 }
 

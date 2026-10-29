@@ -5,6 +5,7 @@ import type { UserId } from "../domain/user-id.js";
 import type { Interrupcao, PassoDaGuarda, TurnoPronto } from "./guardas.js";
 
 declare function chamarOAgent(turno: TurnoPronto): void;
+declare function registrar(passo: PassoDaGuarda): void;
 declare const conversa: Conversa<"agent">;
 declare const ana: UserId;
 
@@ -42,5 +43,18 @@ describe("Guardas: garantias em tempo de compilação", () => {
     expectTypeOf<Extract<Interrupcao, { motivo: "conversa_na_fila" }>>().not.toHaveProperty(
       "resposta",
     );
+  });
+
+  it("cada guarda só registra os resultados que ela pode produzir", () => {
+    registrar({ etapa: "guarda", nome: "controle", resultado: "interrompeu", detalhe: "" });
+    registrar({ etapa: "guarda", nome: "limite", resultado: "interrompeu", detalhe: "" });
+    registrar({ etapa: "guarda", nome: "vencidos", resultado: "nao_verificou", detalhe: "" });
+
+    // @ts-expect-error: a guarda de vencidos nunca interrompe o turno
+    registrar({ etapa: "guarda", nome: "vencidos", resultado: "interrompeu", detalhe: "" });
+    // @ts-expect-error: a guarda de controle não depende de serviço externo, então sempre verifica
+    registrar({ etapa: "guarda", nome: "controle", resultado: "nao_verificou", detalhe: "" });
+    // @ts-expect-error: a guarda de limite não depende de serviço externo, então sempre verifica
+    registrar({ etapa: "guarda", nome: "limite", resultado: "nao_verificou", detalhe: "" });
   });
 });
