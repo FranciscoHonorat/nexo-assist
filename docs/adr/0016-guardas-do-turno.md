@@ -33,9 +33,14 @@ encadeia.
 - **Só as guardas produzem um `TurnoPronto`.** O tipo leva uma marca com `unique symbol` não
   exportado ([ADR-0008](0008-garantias-no-sistema-de-tipos.md)). Quem chamar o agent com um
   objeto montado à mão não compila.
-- **Cada guarda deixa um passo no trace** (`passou`, `interrompeu` ou `nao_verificou`), inclusive
-  quando interrompe. É o registro de fatos que o [ADR-0003](0003-saida-do-agent-via-tool.md)
-  separa das falas do LLM.
+- **Cada guarda deixa um passo no trace** (`{ etapa: "guarda", nome, resultado, detalhe }`),
+  inclusive quando interrompe. É o registro de fatos que o
+  [ADR-0003](0003-saida-do-agent-via-tool.md) separa das falas do LLM.
+- **Cada guarda só registra o que ela pode produzir.** Um mapa por guarda fixa os resultados:
+  controle e limite passam ou interrompem; vencidos passa ou não verifica. `vencidos` +
+  `interrompeu` não compila.
+- **Cada guarda conhece só a própria regra.** Quando uma guarda interrompe, `prepararTurno`
+  junta os passos anteriores ao trace da interrupção.
 - **As interrupções são uma lista fechada** (`Interrupcao`), e só a do limite tem `resposta`.
 
 ## Opções consideradas
@@ -65,9 +70,9 @@ que não é dele. Uma lista configurável de guardas abriria espaço para trocar
 
 - 8 cenários BDD (Dado/Quando/Então), um bloco por guarda e um para o turno completo, incluindo a
   31ª mensagem e o legado fora do ar.
-- 4 testes de tipo: a conversa do `TurnoPronto` é `Conversa<"agent">`, um turno forjado não
-  compila, as interrupções e os resultados do trace são listas fechadas e só o limite tem
-  resposta.
+- 5 testes de tipo: a conversa do `TurnoPronto` é `Conversa<"agent">`, um turno forjado não
+  compila, as interrupções e os resultados do trace são listas fechadas, só o limite tem
+  resposta e cada guarda só registra os resultados que pode produzir.
 - Na refatoração para uma função por guarda, os testes não mudaram e continuaram verdes.
 
 ## Consequências
@@ -80,5 +85,6 @@ que não é dele. Uma lista configurável de guardas abriria espaço para trocar
 ## Itens de ação
 
 1. [x] Guardas de controle, limite e vencidos.
-2. [ ] `AgentStep` recebe só `TurnoPronto` (passo 7b).
+2. [x] O loop do agent (`executarTurno`) aceita só `TurnoPronto`
+       ([ADR-0017](0017-loop-de-tools-no-codigo.md)).
 3. [ ] `mensagensNaSessao` lido das conversas persistidas (passo 7c).

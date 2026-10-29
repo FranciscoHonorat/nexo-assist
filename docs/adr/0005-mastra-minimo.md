@@ -56,7 +56,8 @@ diferenciais.
 
 ## Itens de ação
 
-1. [ ] Interface `AgentStep`.
-2. [ ] `ScriptedAgentStep` para os testes BDD.
+1. [x] Interface `AgentStep`, que faz uma decisão por chamada; o loop de tools ficou no código
+       ([ADR-0017](0017-loop-de-tools-no-codigo.md)).
+2. [x] `ScriptedAgentStep` para os testes BDD (`agentStepRoteirizado`).
 3. [ ] `MastraAgentStep`.
 4. [ ] Regra de lint: `@mastra/*` só pode ser importado em `agent/mastra/`.
