@@ -127,7 +127,7 @@ async function executarTool(
     case "consultar_chamados":
       return consultarChamados(usuario, chamados);
     case "obter_chamado":
-      return obterChamado(chamada.argumentos.id);
+      return obterChamado(chamada.argumentos.id, usuario, chamados);
   }
 }
 
@@ -144,12 +144,23 @@ async function consultarChamados(usuario: UserId, chamados: TicketClient): Promi
   };
 }
 
-function obterChamado(id: string): ToolExecutada {
+async function obterChamado(
+  id: string,
+  usuario: UserId,
+  chamados: TicketClient,
+): Promise<ToolExecutada> {
   const lido = lerTicketId(id);
-  if (lido.ok) throw new Error("obter_chamado com id válido: ainda sem implementação");
+  if (!lido.ok) {
+    return {
+      resultado: { tool: "obter_chamado", erro: lido.erro },
+      trace: { resultado: "argumentos_invalidos", detalhe: `id "${id}" fora do formato` },
+    };
+  }
+  const consulta = await chamados.obter(lido.valor, usuario);
+  if (!consulta.ok) throw new Error("obter_chamado sem sucesso: ainda sem tratamento");
   return {
-    resultado: { tool: "obter_chamado", erro: lido.erro },
-    trace: { resultado: "argumentos_invalidos", detalhe: `id "${id}" fora do formato` },
+    resultado: { tool: "obter_chamado", chamado: consulta.valor },
+    trace: { resultado: "executou", detalhe: `${consulta.valor.id} encontrado` },
   };
 }
 

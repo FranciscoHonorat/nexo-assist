@@ -168,4 +168,25 @@ describe("Tool obter_chamado: o LLM propõe o id, o código valida antes de cons
       detalhe: 'id "abc" fora do formato',
     });
   });
+
+  it("Dado um id válido de um chamado da Ana, Quando o modelo pede o chamado, Então recebe o chamado consultado em nome da Ana", async () => {
+    const { turno, chamados, consultas } = await cenarioDaAna("e o INC-20311?", [incidenteDaAna]);
+    const modelo = agentStepRoteirizado([
+      chamaTools({ tool: "obter_chamado", argumentos: { id: "INC-20311" } }),
+      responde("O INC-20311 está aberto."),
+    ]);
+
+    const resposta = await executarTurno(turno, modelo, chamados);
+
+    expect(consultas).toEqual(["listar", "obter"]);
+    expect(modelo.contextosRecebidos[1]?.resultadosDeTools).toEqual([
+      { tool: "obter_chamado", chamado: incidenteDaAna },
+    ]);
+    expect(resposta.trace).toContainEqual({
+      etapa: "tool",
+      nome: "obter_chamado",
+      resultado: "executou",
+      detalhe: "INC-20311 encontrado",
+    });
+  });
 });

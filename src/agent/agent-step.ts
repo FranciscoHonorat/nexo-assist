@@ -15,6 +15,7 @@ export type ChamadaDeTool =
 
 export type ResultadoDeTool =
   | { readonly tool: "consultar_chamados"; readonly chamados: readonly Chamado[] }
+  | { readonly tool: "obter_chamado"; readonly chamado: Chamado }
   | { readonly tool: "obter_chamado"; readonly erro: ErroTicketId };
 
 export type DecisaoFinal =
