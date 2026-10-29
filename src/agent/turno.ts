@@ -56,7 +56,7 @@ type Andamento = {
 
 type ToolExecutada = {
   readonly resultado: ResultadoDeTool;
-  readonly passo: PassoDaTool;
+  readonly trace: Pick<PassoDaTool, "resultado" | "detalhe">;
 };
 
 const MODELO_NAO_DECLAROU: PassoDaResposta = {
@@ -110,7 +110,7 @@ function registrar(andamento: Andamento, executadas: readonly ToolExecutada[]): 
       ...andamento.resultadosDeTools,
       ...executadas.map((executada) => executada.resultado),
     ],
-    trace: [...andamento.trace, ...executadas.map((executada) => executada.passo)],
+    trace: [...andamento.trace, ...executadas.map(passoDaTool)],
   };
 }
 
@@ -137,9 +137,7 @@ async function consultarChamados(usuario: UserId, chamados: TicketClient): Promi
   const ids = doUsuario.valor.map((chamado) => chamado.id).join(", ");
   return {
     resultado: { tool: "consultar_chamados", chamados: doUsuario.valor },
-    passo: {
-      etapa: "tool",
-      nome: "consultar_chamados",
+    trace: {
       resultado: "executou",
       detalhe: `${String(doUsuario.valor.length)} chamados: ${ids}`,
     },
@@ -151,13 +149,12 @@ function obterChamado(id: string): ToolExecutada {
   if (lido.ok) throw new Error("obter_chamado com id válido: ainda sem implementação");
   return {
     resultado: { tool: "obter_chamado", erro: lido.erro },
-    passo: {
-      etapa: "tool",
-      nome: "obter_chamado",
-      resultado: "argumentos_invalidos",
-      detalhe: `id "${id}" fora do formato`,
-    },
+    trace: { resultado: "argumentos_invalidos", detalhe: `id "${id}" fora do formato` },
   };
+}
+
+function passoDaTool({ resultado, trace }: ToolExecutada): PassoDaTool {
+  return { etapa: "tool", nome: resultado.tool, ...trace };
 }
 
 function traduzirDecisao(decisao: DecisaoFinal): Conclusao {
