@@ -8,11 +8,16 @@ export type Declaracao = {
   readonly porque: string;
 };
 
-export type Decisao = {
-  readonly tipo: "responder";
-  readonly declaracao: Declaracao;
-  readonly mensagem: string;
-};
+export type Decisao =
+  | {
+      readonly tipo: "responder";
+      readonly declaracao: Declaracao;
+      readonly mensagem: string;
+    }
+  | {
+      readonly tipo: "texto_solto";
+      readonly texto: string;
+    };
 
 export type ContextoDoPasso = {
   readonly mensagem: string;

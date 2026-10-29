@@ -48,4 +48,24 @@ describe("Turno do agent: toda saída passa pela tool responder", () => {
     });
     expect(modelo.contextosRecebidos).toMatchObject([{ mensagem: "bom dia" }]);
   });
+
+  it("Dado que o modelo responde com texto solto, Quando o turno roda, Então o texto vira a mensagem, sem declaração e com confiança baixa", async () => {
+    const turno = await turnoDaAna("bom dia");
+    const modelo = agentStepRoteirizado([
+      { tipo: "texto_solto", texto: "Bom dia! Em que posso ajudar?" },
+    ]);
+
+    const resposta = await executarTurno(turno, modelo);
+
+    expect(resposta).toMatchObject({
+      mensagem: "Bom dia! Em que posso ajudar?",
+      declaracao: null,
+      confianca: "baixa",
+    });
+    expect(resposta.trace).toContainEqual({
+      etapa: "resposta",
+      resultado: "nao_declarou",
+      detalhe: "o modelo respondeu com texto solto, fora da tool responder",
+    });
+  });
 });
