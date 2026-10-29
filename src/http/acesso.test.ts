@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { DURACAO_DA_SESSAO, emitirSessao } from "../acesso/sessao.js";
 import { lerUserId } from "../domain/user-id.js";
 import { valorDe } from "../testes/valor-de.js";
-import { appDeTeste, SEGREDO, SENHA } from "../testes/http.js";
+import { appDeTeste, SEGREDO, SENHA, VERSAO_DE_TESTE } from "../testes/http.js";
 
 describe("HTTP: entrar, sair e quem pode o quê", () => {
   it("Dado o e-mail e a senha certos, Então a sessão vem num cookie que o JavaScript da página não lê", async () => {
@@ -129,12 +129,12 @@ describe("HTTP: entrar, sair e quem pode o quê", () => {
     expect(await resposta.json()).toEqual({ erro: "nao_encontrado" });
   });
 
-  it("Dado a plataforma de deploy conferindo a saúde, Então /api/saude responde sem sessão", async () => {
+  it("Dado a plataforma de deploy conferindo a saúde, Então /api/saude responde sem sessão, com a versão no ar", async () => {
     const { pedir } = await appDeTeste();
 
     const resposta = await pedir("GET", "/api/saude");
 
     expect(resposta.status).toBe(200);
-    expect(await resposta.json()).toEqual({ ok: true });
+    expect(await resposta.json()).toEqual({ ok: true, versao: VERSAO_DE_TESTE });
   });
 });

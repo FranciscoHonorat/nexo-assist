@@ -12,6 +12,7 @@ import { conversasQueAvisam } from "../tempo-real/conversas-que-avisam.js";
 import { ticketClientEmMemoria } from "../tickets/em-memoria.js";
 
 export const SENHA = "senha-de-teste";
+export const VERSAO_DE_TESTE = "3f2a9c1";
 export const SEGREDO = "segredo-de-teste-com-mais-de-32-caracteres";
 
 let cadastro: Promise<PessoaCadastrada[]> | undefined;
@@ -66,6 +67,7 @@ export async function appDeTeste({
     agora: () => relogio.agora,
     cookieSeguro: false,
     limiteDeTurnos: { maximo: maximoDeTurnos, janela: HORA },
+    versao: VERSAO_DE_TESTE,
   });
 
   const pedir = (

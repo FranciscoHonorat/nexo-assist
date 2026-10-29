@@ -26,6 +26,7 @@ export type ServicosDaApp = {
   readonly agora: () => Date;
   readonly cookieSeguro: boolean;
   readonly limiteDeTurnos: PoliticaDeTurnos;
+  readonly versao: string;
 };
 
 export type AmbienteDaRota = { readonly Variables: { readonly pessoa: Pessoa } };
@@ -39,7 +40,7 @@ export function criarApp(servicos: ServicosDaApp): Hono {
   const app = new Hono();
   app.use(secureHeaders(), csrf());
 
-  app.get("/api/saude", (c) => c.json({ ok: true }));
+  app.get("/api/saude", (c) => c.json({ ok: true, versao: servicos.versao }));
 
   app.post("/api/entrar", async (c) => {
     const corpo = await lerCorpo(c, credenciais);
