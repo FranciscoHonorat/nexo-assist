@@ -35,16 +35,17 @@ export async function executarTool(
 }
 
 async function consultarChamados(usuario: UserId, chamados: TicketClient): Promise<ToolExecutada> {
-  const doUsuario = await chamados.listar(usuario);
-  if (!doUsuario.ok) throw new Error("legado fora do ar durante uma tool: ainda sem tratamento");
-  const ids = doUsuario.valor.map((chamado) => chamado.id).join(", ");
+  const resposta = await chamados.listar(usuario);
+  if (!resposta.ok) throw new Error("legado fora do ar durante uma tool: ainda sem tratamento");
   return {
-    resultado: { tool: "consultar_chamados", resposta: doUsuario },
-    trace: {
-      resultado: "executou",
-      detalhe: `${String(doUsuario.valor.length)} chamados: ${ids}`,
-    },
+    resultado: { tool: "consultar_chamados", resposta },
+    trace: descreverLista(resposta.valor),
   };
+}
+
+function descreverLista(lista: readonly Chamado[]): ToolExecutada["trace"] {
+  const ids = lista.map((chamado) => chamado.id).join(", ");
+  return { resultado: "executou", detalhe: `${String(lista.length)} chamados: ${ids}` };
 }
 
 type RespostaDaBusca = Resultado<Chamado, ErroTicketId | ErroDeConsulta>;
