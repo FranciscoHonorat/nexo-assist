@@ -50,6 +50,15 @@ poucos pontos auditáveis:
   que só compila sem asserção quando o conteúdo é uma interseção (`{ tipo } & { dados }`).
   Achatar a interseção para o formato de objeto quebra a correlação. Em 2026-10-28, com o
   TypeScript 6.0.3, não foi possível ter as duas coisas, e a asserção de uma linha ficou.
+- `conformeOConteudo` no rascunho, pelo mesmo motivo: escolhe o ramo pelo tipo do conteúdo. Em
+  troca, o tipo `PorConteudo` exige um ramo por tipo de conteúdo, e um tipo novo não compila até
+  ter o seu.
+- `comoJson` em `infraestrutura/json.ts`, que afirma que um valor passado por `JSON.stringify` e
+  `JSON.parse` é `Json`.
+
+As listas fechadas do domínio (categorias, prioridades, afetados, tipos de chamado, motivos de
+transferência, confianças) são constantes `as const`, e os tipos saem delas. Os enums do Postgres
+e os schemas zod usam as mesmas constantes: uma categoria nova muda as três camadas de uma vez.
 
 As garantias de tipo são testadas em arquivos `*.test-d.ts`, com `@ts-expect-error` como
 asserção: se o código passar a aceitar algo proibido, o teste falha.

@@ -73,5 +73,6 @@ resultado final é o que as duas queriam.
 
 1. [x] Tabela de transições e `TransicaoDeStatus`.
 2. [x] `alterarStatus` no contrato e na versão em memória.
-3. [ ] Leitura de uma transição vinda do LLM.
+3. [ ] Leitura de uma transição vinda do LLM: adiada até uma história pedir que o funcionário mude o
+       status pelo chat ([ADR-0019](0019-acoes-do-agent.md)).
 4. [ ] Permitir que analistas alterem o status de chamados de outras pessoas.

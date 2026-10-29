@@ -36,5 +36,7 @@ de alteração de status.
 | [0014](0014-legado-fora-do-ar.md)                    | Legado fora do ar                                                | Aceito | Feito         |
 | [0015](0015-fronteiras-verificadas-pelo-lint.md)     | Fronteiras verificadas pelo lint                                 | Aceito | Feito         |
 | [0016](0016-guardas-do-turno.md)                     | Guardas do turno antes do LLM, com marca e trace                 | Aceito | Feito         |
-| [0017](0017-loop-de-tools-no-codigo.md)              | Loop de tools no código, com o modelo decidindo um passo por vez | Aceito | Em andamento  |
+| [0017](0017-loop-de-tools-no-codigo.md)              | Loop de tools no código, com o modelo decidindo um passo por vez | Aceito | Feito         |
 | [0018](0018-persistencia-das-conversas.md)           | Persistência das conversas, com controle e turno condicionais    | Aceito | Feito         |
+| [0019](0019-acoes-do-agent.md)                       | O modelo propõe, o clique confirma, o código verifica            | Aceito | Em andamento  |
+| [0020](0020-central-de-ajuda.md)                     | Central de ajuda com busca por palavras, no código               | Aceito | Em andamento  |

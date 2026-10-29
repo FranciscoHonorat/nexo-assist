@@ -92,4 +92,5 @@ chamado de outro dono, então o agent não revela que o chamado existe.
 2. [x] Loop com limite, fallback e trace.
 3. [x] Tools `consultar_chamados` e `obter_chamado`.
 4. [x] `MastraAgentStep` traduzindo uma chamada ao modelo em `Decisao` (passo 7d).
-5. [ ] Tools de rascunho, confirmação e transferência.
+5. [x] Tools de rascunho e transferência; a confirmação ficou fora das tools
+       ([ADR-0019](0019-acoes-do-agent.md)).
