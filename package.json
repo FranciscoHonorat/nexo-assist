@@ -36,9 +36,9 @@
     "vitest": "5.0.5"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "4.0.91",
+    "@ai-sdk/anthropic": "4.0.82",
     "@mastra/core": "1.80.0",
-    "ai": "7.0.156",
+    "ai": "7.0.143",
     "drizzle-orm": "0.45.4",
     "pg": "8.23.1",
     "zod": "4.6.7"
