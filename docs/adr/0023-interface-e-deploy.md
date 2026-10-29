@@ -48,5 +48,9 @@ celular), sem erros no console do navegador.
 
 1. [x] Login, chat e console.
 2. [x] Dockerfile, `railway.json` e healthcheck.
-3. [ ] Publicar no Railway com as variáveis do projeto (feito pelo dono da conta).
-4. [ ] Testes de ponta a ponta automatizados no CI, se a interface crescer.
+3. [x] Publicar no Railway com as variáveis do projeto (feito pelo dono da conta).
+4. [x] Deploy contínuo: job `deploy` no CI, depois do `check`, só na `main`. Envia com
+       `railway up` e confere que `/api/saude` responde com o SHA do commit, porque o Railway mantém
+       a versão anterior no ar quando a nova falha no healthcheck, e uma checagem só de "está de pé"
+       passaria com a versão velha.
+5. [ ] Testes de ponta a ponta automatizados no CI, se a interface crescer.

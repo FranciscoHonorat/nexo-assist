@@ -138,7 +138,22 @@ O repositório tem `Dockerfile` e `railway.json` (healthcheck em `/api/saude`).
 2. No serviço da aplicação, defina as variáveis: `DATABASE_URL` (referência ao Postgres do
    projeto), `ANTHROPIC_API_KEY`, `LLM_MODEL`, `LLM_EFFORT` e `SESSION_SECRET`. O Railway define a
    `PORT`.
-3. O deploy aplica as migrations na subida, protegidas por uma trava no banco.
+3. O deploy aplica as migrations na subida, protegidas por uma trava no banco. Se o banco não
+   responder, o log diz o endereço tentado (sem usuário nem senha) e encerra.
+
+**Deploy contínuo:** todo push na `main` passa pelo CI e, só se ele passar, o job `deploy` envia o
+código ao Railway (`railway up`) e espera `/api/saude` responder com o SHA do commit. Se a versão
+nova não entrar no ar em 10 minutos, o job falha. Configuração no GitHub (Settings → Secrets and
+variables → Actions):
+
+| Tipo     | Nome              | Valor                                                      |
+| -------- | ----------------- | ---------------------------------------------------------- |
+| Secret   | `RAILWAY_TOKEN`   | Token do projeto (Railway → Project Settings → Tokens)     |
+| Variable | `RAILWAY_SERVICE` | Nome do serviço da aplicação no Railway                    |
+| Variable | `URL_DE_PRODUCAO` | URL pública, sem barra no fim (`https://….up.railway.app`) |
+
+Desligue o deploy automático pelo GitHub no serviço do Railway (Settings → Source), para cada push
+não gerar dois deploys.
 
 **Proteção da chave e do custo:**
 
