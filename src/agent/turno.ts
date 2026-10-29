@@ -1,5 +1,5 @@
 import type { AgentStep, Confianca, Decisao, Declaracao } from "./agent-step.js";
-import type { PassoDoTrace, TurnoPronto } from "./guardas.js";
+import type { PassoDaGuarda, TurnoPronto } from "./guardas.js";
 
 export type PassoDaResposta = {
   readonly etapa: "resposta";
@@ -7,7 +7,7 @@ export type PassoDaResposta = {
   readonly detalhe: string;
 };
 
-export type PassoDoTurno = PassoDoTrace | PassoDaResposta;
+export type PassoDoTurno = PassoDaGuarda | PassoDaResposta;
 
 export type RespostaDoTurno = {
   readonly mensagem: string;
@@ -34,11 +34,11 @@ export async function executarTurno(
     mensagem: turno.mensagem,
     chamadosVencidos: turno.chamadosVencidos,
   });
-  const { passos, ...resposta } = lerSaida(decisao);
+  const { passos, ...resposta } = traduzirDecisao(decisao);
   return { ...resposta, trace: [...turno.trace, ...passos] };
 }
 
-function lerSaida(decisao: Decisao): SaidaDoModelo {
+function traduzirDecisao(decisao: Decisao): SaidaDoModelo {
   switch (decisao.tipo) {
     case "responder":
       return {

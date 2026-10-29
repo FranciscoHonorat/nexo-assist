@@ -14,18 +14,22 @@ export const RESPOSTA_DO_LIMITE =
 
 export type NomeDaGuarda = "controle" | "limite" | "vencidos";
 
-export type PassoDoTrace = {
+export type PassoDaGuarda = {
   readonly guarda: NomeDaGuarda;
   readonly resultado: "passou" | "interrompeu" | "nao_verificou";
   readonly detalhe: string;
 };
 
-type Trace = readonly PassoDoTrace[];
+type TraceDasGuardas = readonly PassoDaGuarda[];
 
 export type Interrupcao =
-  | { readonly motivo: "conversa_na_fila"; readonly trace: Trace }
-  | { readonly motivo: "conversa_com_analista"; readonly trace: Trace }
-  | { readonly motivo: "limite_da_sessao"; readonly resposta: string; readonly trace: Trace };
+  | { readonly motivo: "conversa_na_fila"; readonly trace: TraceDasGuardas }
+  | { readonly motivo: "conversa_com_analista"; readonly trace: TraceDasGuardas }
+  | {
+      readonly motivo: "limite_da_sessao";
+      readonly resposta: string;
+      readonly trace: TraceDasGuardas;
+    };
 
 export type EntradaDoTurno = {
   readonly usuario: UserId;
@@ -41,7 +45,7 @@ export type TurnoPronto = {
   readonly mensagem: string;
   readonly agora: Date;
   readonly chamadosVencidos: readonly Chamado[];
-  readonly trace: Trace;
+  readonly trace: TraceDasGuardas;
   readonly [preparadoPelasGuardas]: true;
 };
 
@@ -71,7 +75,7 @@ export async function prepararTurno(
 
 function guardaDoControle(
   conversa: Conversa<Controle>,
-): Resultado<{ readonly conversa: Conversa<"agent">; readonly passo: PassoDoTrace }, Interrupcao> {
+): Resultado<{ readonly conversa: Conversa<"agent">; readonly passo: PassoDaGuarda }, Interrupcao> {
   if (agentPodeResponder(conversa)) {
     return sucesso({ conversa, passo: passo("controle", "passou", "conversa com o agent") });
   }
@@ -91,8 +95,8 @@ function guardaDoControle(
 
 function guardaDoLimite(
   mensagensNaSessao: number,
-  anteriores: Trace,
-): Resultado<PassoDoTrace, Interrupcao> {
+  anteriores: TraceDasGuardas,
+): Resultado<PassoDaGuarda, Interrupcao> {
   const numeroDaMensagem = mensagensNaSessao + 1;
   const contagem = `${String(numeroDaMensagem)} de ${String(LIMITE_DE_MENSAGENS_POR_SESSAO)} mensagens`;
   if (numeroDaMensagem > LIMITE_DE_MENSAGENS_POR_SESSAO) {
@@ -109,7 +113,7 @@ async function guardaDosVencidos(
   usuario: UserId,
   agora: Date,
   chamados: TicketClient,
-): Promise<{ readonly chamadosVencidos: readonly Chamado[]; readonly passo: PassoDoTrace }> {
+): Promise<{ readonly chamadosVencidos: readonly Chamado[]; readonly passo: PassoDaGuarda }> {
   const doUsuario = await chamados.listar(usuario);
   if (!doUsuario.ok) {
     return {
@@ -131,9 +135,9 @@ async function guardaDosVencidos(
 
 function passo(
   guarda: NomeDaGuarda,
-  resultado: PassoDoTrace["resultado"],
+  resultado: PassoDaGuarda["resultado"],
   detalhe: string,
-): PassoDoTrace {
+): PassoDaGuarda {
   return { guarda, resultado, detalhe };
 }
 

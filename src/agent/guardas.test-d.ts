@@ -2,7 +2,7 @@ import { describe, expectTypeOf, it } from "vitest";
 import type { Chamado } from "../domain/chamado.js";
 import type { Conversa } from "../domain/conversa.js";
 import type { UserId } from "../domain/user-id.js";
-import type { Interrupcao, PassoDoTrace, TurnoPronto } from "./guardas.js";
+import type { Interrupcao, PassoDaGuarda, TurnoPronto } from "./guardas.js";
 
 declare function chamarOAgent(turno: TurnoPronto): void;
 declare const conversa: Conversa<"agent">;
@@ -32,7 +32,7 @@ describe("Guardas: garantias em tempo de compilação", () => {
     expectTypeOf<Interrupcao["motivo"]>().toEqualTypeOf<
       "conversa_na_fila" | "conversa_com_analista" | "limite_da_sessao"
     >();
-    expectTypeOf<PassoDoTrace["resultado"]>().toEqualTypeOf<
+    expectTypeOf<PassoDaGuarda["resultado"]>().toEqualTypeOf<
       "passou" | "interrompeu" | "nao_verificou"
     >();
   });
