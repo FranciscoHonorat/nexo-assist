@@ -311,6 +311,26 @@ describe("MastraAgentStep: o histórico do turno volta exato para o modelo", () 
     expect(JSON.stringify(prompt[3])).toContain("e o INC-20311?");
   });
 
+  it("Dado mensagens do analista e eventos do sistema, Então o analista fala como o service desk e o evento chega marcado como aviso do sistema", async () => {
+    const modelo = modeloQueResponde({ conteudo: [{ type: "text", text: "Olá!" }] });
+
+    await passo(modelo).decidir({
+      ...contexto,
+      anteriores: [
+        { autor: "analista", texto: "Reinstalei o driver." },
+        { autor: "sistema", texto: "O analista devolveu a conversa ao agent." },
+      ],
+    });
+
+    const [, doAnalista, doSistema] = modelo.doGenerateCalls[0]?.prompt ?? [];
+    expect(doAnalista?.role).toBe("assistant");
+    expect(JSON.stringify(doAnalista)).toContain("[Analista do service desk] Reinstalei o driver.");
+    expect(doSistema?.role).toBe("user");
+    expect(JSON.stringify(doSistema)).toContain(
+      "[Aviso do sistema, não do funcionário] O analista devolveu a conversa ao agent.",
+    );
+  });
+
   it("Dado chamados vencidos do funcionário, Então o modelo os vê junto da mensagem atual", async () => {
     const modelo = modeloQueResponde({ conteudo: [{ type: "text", text: "Olá!" }] });
 

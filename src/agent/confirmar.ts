@@ -39,7 +39,7 @@ export async function confirmarRascunho(
 
   const aplicado = await aplicar(confirmado.valor, chamados, clique.agora);
   if (!aplicado.ok) return aplicado;
-  await conversas.resolverRascunho(confirmado.valor);
+  await conversas.resolverRascunho({ rascunho: confirmado.valor, chamado: aplicado.valor.id });
   return aplicado;
 }
 
@@ -51,7 +51,7 @@ export async function descartarRascunho(
   if (!pendente.ok) return pendente;
   const descartado = descartar(pendente.valor, clique);
   if (!descartado.ok) return descartado;
-  const resolvido = await conversas.resolverRascunho(descartado.valor);
+  const resolvido = await conversas.resolverRascunho({ rascunho: descartado.valor });
   return resolvido.ok ? sucesso(undefined) : resolvido;
 }
 

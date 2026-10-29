@@ -192,6 +192,9 @@ export function mastraAgentStep({ modelo, instrucoes, esforco }: ConfiguracaoDoM
   };
 }
 
+const AVISO_DO_SISTEMA = "[Aviso do sistema, não do funcionário]";
+const DO_ANALISTA = "[Analista do service desk]";
+
 function mensagensIniciais({
   anteriores,
   mensagem,
@@ -208,9 +211,16 @@ function mensagensIniciais({
 }
 
 function paraMensagemDoModelo({ autor, texto }: MensagemAnterior): ModelMessage {
-  return autor === "funcionario"
-    ? { role: "user", content: texto }
-    : { role: "assistant", content: texto };
+  switch (autor) {
+    case "funcionario":
+      return { role: "user", content: texto };
+    case "agent":
+      return { role: "assistant", content: texto };
+    case "analista":
+      return { role: "assistant", content: `${DO_ANALISTA} ${texto}` };
+    case "sistema":
+      return { role: "user", content: `${AVISO_DO_SISTEMA} ${texto}` };
+  }
 }
 
 function avisoDosVencidos(vencidos: readonly Chamado[]): TextPart {
@@ -222,7 +232,7 @@ function avisoDosVencidos(vencidos: readonly Chamado[]): TextPart {
     .join("; ");
   return {
     type: "text",
-    text: `[Aviso do sistema, não do funcionário] Chamados do funcionário com prazo vencido: ${lista}.`,
+    text: `${AVISO_DO_SISTEMA} Chamados do funcionário com prazo vencido: ${lista}.`,
   };
 }
 

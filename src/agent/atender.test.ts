@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
-import type { Conversas } from "../conversas/conversas.js";
+import { DESDE_O_COMECO, type Conversas } from "../conversas/conversas.js";
 import { conversasEmMemoria } from "../conversas/em-memoria.js";
-import { assumir } from "../domain/conversa.js";
+import { novaConversa } from "../domain/conversa.js";
+import { confirmar } from "../domain/rascunho.js";
 import { falha } from "../domain/resultado.js";
+import { lerTicketId } from "../domain/ticket-id.js";
+import { NOVO_NOTEBOOK_LENTO, rascunhoPendente } from "../testes/rascunhos.js";
 import { INDISPONIVEL } from "../infraestrutura/indisponivel.js";
-import { colocarNaFila } from "../testes/conversas.js";
+import { assumidaPor, colocarNaFila } from "../testes/conversas.js";
 import { ana, bruno } from "../testes/usuarios.js";
 import { valorDe } from "../testes/valor-de.js";
 import { ticketClientEmMemoria } from "../tickets/em-memoria.js";
@@ -58,7 +61,7 @@ describe("Atender uma mensagem: conversa, guardas, agent e histórico juntos", (
       tipo: "resposta",
       resposta: { mensagem: "Bom dia, Ana!", declaracao, confianca: "alta" },
     });
-    expect(valorDe(await servicos.conversas.historico(ana))).toMatchObject([
+    expect(valorDe(await servicos.conversas.historico(ana, DESDE_O_COMECO))).toMatchObject([
       { autor: "funcionario", texto: "bom dia" },
       { autor: "agent", texto: "Bom dia, Ana!", registro: { declaracao, confianca: "alta" } },
     ]);
@@ -81,6 +84,63 @@ describe("Atender uma mensagem: conversa, guardas, agent e histórico juntos", (
         { autor: "agent", texto: "ok" },
       ],
     });
+  });
+
+  it("Dado uma conversa que o Bruno atendeu e devolveu, Quando a Ana volta a escrever, Então o modelo recebe a fala do analista e cada evento descrito em texto", async () => {
+    const servicos = dependencias(
+      agentStepRoteirizado([{ tipo: "responder", declaracao, mensagem: "Que bom!" }]),
+    );
+    const { conversas } = servicos;
+    const comBruno = await assumidaPor(conversas, ana, bruno, agora);
+    valorDe(
+      await conversas.registrarMensagemDoAnalista(comBruno, {
+        texto: "Reinstalei o driver.",
+        agora,
+      }),
+    );
+    valorDe(
+      await conversas.transicionar(
+        { evento: "devolvida", antes: comBruno, depois: novaConversa({ dono: ana }) },
+        agora,
+      ),
+    );
+
+    await atenderMensagem({ usuario: ana, mensagem: "voltou a funcionar", agora }, servicos);
+
+    expect(servicos.modelo.contextosRecebidos[0]?.anteriores).toEqual([
+      {
+        autor: "sistema",
+        texto: "A conversa foi transferida para um analista (motivo: pedido_do_funcionario).",
+      },
+      { autor: "sistema", texto: "O analista bruno.n1@nexo.com assumiu a conversa." },
+      { autor: "analista", texto: "Reinstalei o driver." },
+      { autor: "sistema", texto: "O analista devolveu a conversa ao agent." },
+    ]);
+  });
+
+  it("Dado um rascunho confirmado pelo clique, Quando a Ana volta a escrever, Então o modelo sabe qual chamado foi criado", async () => {
+    const servicos = dependencias(
+      agentStepRoteirizado([{ tipo: "responder", declaracao, mensagem: "Isso mesmo." }]),
+    );
+    const rascunho = rascunhoPendente(NOVO_NOTEBOOK_LENTO, agora);
+    valorDe(await servicos.conversas.atual(ana));
+    valorDe(await servicos.conversas.guardarRascunho(rascunho));
+    const confirmado = valorDe(confirmar(rascunho, { por: ana, agora }));
+    valorDe(
+      await servicos.conversas.resolverRascunho({
+        rascunho: confirmado,
+        chamado: valorDe(lerTicketId("INC-20520")),
+      }),
+    );
+
+    await atenderMensagem({ usuario: ana, mensagem: "criou?", agora }, servicos);
+
+    expect(servicos.modelo.contextosRecebidos[0]?.anteriores).toEqual([
+      {
+        autor: "sistema",
+        texto: "O funcionário confirmou o rascunho e o chamado INC-20520 foi criado.",
+      },
+    ]);
   });
 
   it("Dado uma sessão longa, Quando a Ana manda outra mensagem, Então o modelo recebe só as últimas mensagens, para o custo por turno não crescer sem limite", async () => {
@@ -110,7 +170,7 @@ describe("Atender uma mensagem: conversa, guardas, agent e histórico juntos", (
       resposta: { mensagem: RESPOSTA_DO_LIMITE, declaracao: null, confianca: "baixa" },
     });
     expect(servicos.modelo.contextosRecebidos).toEqual([]);
-    expect(valorDe(await servicos.conversas.historico(ana)).at(-1)).toMatchObject({
+    expect(valorDe(await servicos.conversas.historico(ana, DESDE_O_COMECO)).at(-1)).toMatchObject({
       autor: "agent",
       texto: RESPOSTA_DO_LIMITE,
     });
@@ -141,10 +201,12 @@ describe("Atender uma mensagem: conversa, guardas, agent e histórico juntos", (
         pedidaEm: agora,
       },
     });
-    expect(valorDe(await servicos.conversas.historico(ana)).at(-1)).toMatchObject({
-      autor: "agent",
-      texto: RESPOSTA_DA_TRANSFERENCIA,
-    });
+    expect(
+      valorDe(await servicos.conversas.historico(ana, DESDE_O_COMECO)).slice(-2),
+    ).toMatchObject([
+      { autor: "agent", texto: RESPOSTA_DA_TRANSFERENCIA },
+      { autor: "sistema", evento: { tipo: "transferida", motivo: "pedido_do_funcionario" } },
+    ]);
   });
 
   it("Dado uma conversa transferida pelo agent, Quando a Ana manda outra mensagem, Então o agent fica em silêncio", async () => {
@@ -171,9 +233,11 @@ describe("Atender uma mensagem: conversa, guardas, agent e histórico juntos", (
 
     expect(valorDe(atendimento)).toEqual({ tipo: "silencio", motivo: "conversa_na_fila" });
     expect(servicos.modelo.contextosRecebidos).toEqual([]);
-    expect(valorDe(await servicos.conversas.historico(ana))).toEqual([
-      { autor: "funcionario", texto: "alguém aí?", enviadaEm: agora },
-    ]);
+    expect(valorDe(await servicos.conversas.historico(ana, DESDE_O_COMECO)).at(-1)).toMatchObject({
+      autor: "funcionario",
+      texto: "alguém aí?",
+      enviadaEm: agora,
+    });
   });
 
   it("Dado que um analista assume enquanto o modelo decide, Quando o agent termina, Então a resposta não é gravada e o atendimento é silêncio", async () => {
@@ -184,10 +248,7 @@ describe("Atender uma mensagem: conversa, guardas, agent e histórico juntos", (
     const modeloLento: AgentStep = {
       iniciarTurno: () => ({
         decidir: async (contexto) => {
-          const fila = await colocarNaFila(conversas, ana, agora);
-          valorDe(
-            await conversas.transicionar(assumir(fila, { analista: bruno, agora }), "aguardando"),
-          );
+          await assumidaPor(conversas, ana, bruno, agora);
           return roteiro.iniciarTurno().decidir(contexto);
         },
       }),
@@ -199,9 +260,10 @@ describe("Atender uma mensagem: conversa, guardas, agent e histórico juntos", (
     );
 
     expect(valorDe(atendimento)).toEqual({ tipo: "silencio", motivo: "analista_assumiu" });
-    expect(valorDe(await conversas.historico(ana))).toEqual([
-      { autor: "funcionario", texto: "meu acesso caiu", enviadaEm: agora },
-    ]);
+    expect(valorDe(await conversas.historico(ana, DESDE_O_COMECO)).at(-1)).toMatchObject({
+      autor: "funcionario",
+      texto: "meu acesso caiu",
+    });
   });
 });
 

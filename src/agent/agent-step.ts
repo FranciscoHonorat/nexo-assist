@@ -126,7 +126,7 @@ export type Decisao =
     };
 
 export type MensagemAnterior = {
-  readonly autor: "funcionario" | "agent";
+  readonly autor: "funcionario" | "agent" | "analista" | "sistema";
   readonly texto: string;
 };
 

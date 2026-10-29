@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { DESDE_O_COMECO } from "../conversas/conversas.js";
 import { conversasEmMemoria } from "../conversas/em-memoria.js";
 import type { Chamado } from "../domain/chamado.js";
 import type { Rascunho } from "../domain/rascunho.js";
@@ -56,6 +57,18 @@ describe("Confirmar um rascunho: só o clique da dona cria o chamado", () => {
       ok: false,
       erro: { motivo: "rascunho_ja_resolvido", status: "confirmado" },
     });
+  });
+
+  it("Dado um rascunho confirmado, Quando o chamado é criado, Então a conversa da Ana registra qual chamado foi criado, para o agent e para a tela", async () => {
+    const { servicos, id } = await comRascunhoGuardado(
+      rascunhoPendente(NOVO_NOTEBOOK_LENTO, propostoEm),
+    );
+
+    const criado = valorDe(await confirmarRascunho(cliqueDa(id), servicos));
+
+    expect(valorDe(await servicos.conversas.historico(ana, DESDE_O_COMECO))).toMatchObject([
+      { autor: "sistema", evento: { tipo: "chamado_criado", chamado: criado.id } },
+    ]);
   });
 
   it("Dado um rascunho já confirmado, Quando a Ana clica de novo, Então nenhum chamado novo é criado e ela recebe que já foi confirmado", async () => {
@@ -135,6 +148,7 @@ describe("Confirmar um rascunho: só o clique da dona cria o chamado", () => {
       erro: { motivo: "indisponivel" },
     });
     expect(await servicos.conversas.rascunhoPendente(rascunho.id, ana)).toMatchObject({ ok: true });
+    expect(valorDe(await servicos.conversas.historico(ana, DESDE_O_COMECO))).toEqual([]);
   });
 });
 

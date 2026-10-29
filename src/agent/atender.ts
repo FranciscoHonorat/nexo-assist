@@ -1,4 +1,9 @@
-import type { Conversas, Mensagem, Turno } from "../conversas/conversas.js";
+import {
+  DESDE_O_COMECO,
+  type Conversas,
+  type Mensagem,
+  type Turno,
+} from "../conversas/conversas.js";
 import { transferir, type Conversa } from "../domain/conversa.js";
 import { falha, sucesso, type Resultado } from "../domain/resultado.js";
 import type { UserId } from "../domain/user-id.js";
@@ -6,6 +11,7 @@ import type { ErroDeInfraestrutura } from "../infraestrutura/indisponivel.js";
 import { comoJson } from "../infraestrutura/json.js";
 import type { TicketClient } from "../tickets/ticket-client.js";
 import type { AgentStep, MensagemAnterior } from "./agent-step.js";
+import { paraMensagemAnterior } from "./eventos.js";
 import { prepararTurno, type Interrupcao, type TurnoPronto } from "./guardas.js";
 import { executarTurno, SEM_ANEXOS, type RespostaDoTurno, type ServicosDoTurno } from "./turno.js";
 
@@ -36,7 +42,7 @@ export async function atenderMensagem(
   const atual = await conversas.atual(usuario);
   if (!atual.ok) return atual;
   const { conversa, mensagensNaSessao } = atual.valor;
-  const historico = await conversas.historico(usuario);
+  const historico = await conversas.historico(usuario, DESDE_O_COMECO);
   if (!historico.ok) return historico;
 
   const preparado = await prepararTurno(
@@ -86,7 +92,10 @@ async function aplicarTransferencia(
   if (transferencia === null) return sucesso(undefined);
   const fila = transferir(conversa, { ...transferencia, agora });
   if (!fila.ok) throw new Error("o turno entregou uma transferência sem resumo");
-  const transicao = await conversas.transicionar(fila.valor, "agent");
+  const transicao = await conversas.transicionar(
+    { evento: "transferida", antes: conversa, depois: fila.valor },
+    agora,
+  );
   if (!transicao.ok && transicao.erro.motivo === "indisponivel") return falha(transicao.erro);
   return sucesso(undefined);
 }
@@ -114,9 +123,7 @@ async function decidirResposta(
 }
 
 function anterioresDo(historico: readonly Mensagem[]): readonly MensagemAnterior[] {
-  return historico
-    .slice(-MENSAGENS_ANTERIORES_NO_CONTEXTO)
-    .map(({ autor, texto }) => ({ autor, texto }));
+  return historico.slice(-MENSAGENS_ANTERIORES_NO_CONTEXTO).map(paraMensagemAnterior);
 }
 
 function silencio(motivo: MotivoDoSilencio): Atendimento {
