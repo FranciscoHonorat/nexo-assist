@@ -8,7 +8,16 @@ export type Declaracao = {
   readonly porque: string;
 };
 
-export type Decisao =
+export type ChamadaDeTool = {
+  readonly tool: "consultar_chamados";
+};
+
+export type ResultadoDeTool = {
+  readonly tool: "consultar_chamados";
+  readonly chamados: readonly Chamado[];
+};
+
+export type DecisaoFinal =
   | {
       readonly tipo: "responder";
       readonly declaracao: Declaracao;
@@ -19,9 +28,17 @@ export type Decisao =
       readonly texto: string;
     };
 
+export type Decisao =
+  | DecisaoFinal
+  | {
+      readonly tipo: "tools";
+      readonly chamadas: readonly ChamadaDeTool[];
+    };
+
 export type ContextoDoPasso = {
   readonly mensagem: string;
   readonly chamadosVencidos: readonly Chamado[];
+  readonly resultadosDeTools: readonly ResultadoDeTool[];
 };
 
 export type AgentStep = {
