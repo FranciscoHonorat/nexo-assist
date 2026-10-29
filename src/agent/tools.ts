@@ -39,7 +39,7 @@ async function consultarChamados(usuario: UserId, chamados: TicketClient): Promi
   if (!doUsuario.ok) throw new Error("legado fora do ar durante uma tool: ainda sem tratamento");
   const ids = doUsuario.valor.map((chamado) => chamado.id).join(", ");
   return {
-    resultado: { tool: "consultar_chamados", chamados: doUsuario.valor },
+    resultado: { tool: "consultar_chamados", resposta: doUsuario },
     trace: {
       resultado: "executou",
       detalhe: `${String(doUsuario.valor.length)} chamados: ${ids}`,

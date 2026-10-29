@@ -16,7 +16,10 @@ export type ChamadaDeTool =
   | { readonly tool: "obter_chamado"; readonly argumentos: { readonly id: string } };
 
 export type ResultadoDeTool =
-  | { readonly tool: "consultar_chamados"; readonly chamados: readonly Chamado[] }
+  | {
+      readonly tool: "consultar_chamados";
+      readonly resposta: Resultado<readonly Chamado[], never>;
+    }
   | {
       readonly tool: "obter_chamado";
       readonly resposta: Resultado<Chamado, ErroTicketId | ErroDeConsulta>;

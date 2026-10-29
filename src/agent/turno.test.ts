@@ -122,7 +122,10 @@ describe("Tool consultar_chamados: o agent vê só os chamados de quem está fal
 
     expect(resposta.mensagem).toBe("O INC-20311 está aberto e atrasado.");
     expect(vistoDepoisDasTools(modelo)).toEqual([
-      { tool: "consultar_chamados", chamados: [incidenteDaAna, requisicaoDaAna] },
+      {
+        tool: "consultar_chamados",
+        resposta: { ok: true, valor: [incidenteDaAna, requisicaoDaAna] },
+      },
     ]);
     expect(resposta.trace).toContainEqual(
       passoDeTool("consultar_chamados", "executou", "2 chamados: INC-20311, REQ-10442"),
