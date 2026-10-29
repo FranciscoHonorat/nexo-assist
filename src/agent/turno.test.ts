@@ -20,6 +20,7 @@ import {
   LIMITE_DE_ITERACOES,
   RESPOSTA_DA_RECUSA,
   RESPOSTA_DO_LIMITE_DE_ITERACOES,
+  type PassoDaResposta,
 } from "./turno.js";
 
 async function cenarioDaAna(
@@ -79,6 +80,13 @@ function vistoDepoisDasTools(modelo: AgentStepRoteirizado) {
   return modelo.contextosRecebidos[1]?.resultadosDeTools;
 }
 
+function passoDaResposta(
+  resultado: PassoDaResposta["resultado"],
+  detalhe: string,
+): PassoDaResposta {
+  return { etapa: "resposta", resultado, detalhe };
+}
+
 function passoDeTool(
   nome: PassoDaTool["nome"],
   resultado: PassoDaTool["resultado"],
@@ -112,11 +120,9 @@ describe("Turno do agent: toda saída passa pela tool responder", () => {
       declaracao: null,
       confianca: "baixa",
     });
-    expect(resposta.trace).toContainEqual({
-      etapa: "resposta",
-      resultado: "nao_declarou",
-      detalhe: "o modelo respondeu com texto solto, fora da tool responder",
-    });
+    expect(resposta.trace).toContainEqual(
+      passoDaResposta("nao_declarou", "o modelo respondeu com texto solto, fora da tool responder"),
+    );
   });
 });
 
@@ -167,11 +173,9 @@ describe("Limite de iterações: o modelo não fica preso num loop de tools", ()
       confianca: "baixa",
     });
     expect(resposta.trace.filter((passo) => passo.etapa === "tool")).toHaveLength(4);
-    expect(resposta.trace.at(-1)).toEqual({
-      etapa: "resposta",
-      resultado: "limite_de_iteracoes",
-      detalhe: "o modelo pediu tools 5 vezes sem responder",
-    });
+    expect(resposta.trace.at(-1)).toEqual(
+      passoDaResposta("limite_de_iteracoes", "o modelo pediu tools 5 vezes sem responder"),
+    );
   });
 });
 
@@ -308,11 +312,36 @@ describe("Recusa do modelo: o turno termina com uma resposta fixa", () => {
       declaracao: null,
       confianca: "baixa",
     });
-    expect(resposta.trace.at(-1)).toEqual({
-      etapa: "resposta",
-      resultado: "recusada",
-      detalhe: "o modelo recusou responder",
-    });
+    expect(resposta.trace.at(-1)).toEqual(
+      passoDaResposta("recusada", "o modelo recusou responder"),
+    );
     expect(modelo.contextosRecebidos).toHaveLength(1);
+  });
+});
+
+describe("Declaração inválida: o trace diz o que o modelo errou", () => {
+  it("Dado que o modelo chama responder com a declaração inválida, Quando o turno roda, Então a mensagem sai sem declaração, com confiança baixa, e o trace aponta os campos", async () => {
+    const { turno, chamados } = await cenarioDaAna("como está meu chamado?");
+    const modelo = agentStepRoteirizado([
+      {
+        tipo: "declaracao_invalida",
+        mensagem: "Está aberto.",
+        campos: ["declaracao.confianca", "declaracao.porque"],
+      },
+    ]);
+
+    const resposta = await executarTurno(turno, modelo, chamados);
+
+    expect(resposta).toMatchObject({
+      mensagem: "Está aberto.",
+      declaracao: null,
+      confianca: "baixa",
+    });
+    expect(resposta.trace.at(-1)).toEqual(
+      passoDaResposta(
+        "declaracao_invalida",
+        "o modelo chamou responder com campos inválidos: declaracao.confianca, declaracao.porque",
+      ),
+    );
   });
 });

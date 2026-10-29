@@ -44,6 +44,11 @@ export type DecisaoFinal =
       readonly tipo: "texto_solto";
       readonly texto: string;
     }
+  | {
+      readonly tipo: "declaracao_invalida";
+      readonly mensagem: string;
+      readonly campos: readonly string[];
+    }
   | { readonly tipo: "recusa" };
 
 export type Decisao =

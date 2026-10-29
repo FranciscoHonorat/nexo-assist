@@ -20,7 +20,7 @@ export const RESPOSTA_DA_RECUSA =
 
 export type PassoDaResposta = {
   readonly etapa: "resposta";
-  readonly resultado: "nao_declarou" | "limite_de_iteracoes" | "recusada";
+  readonly resultado: "nao_declarou" | "declaracao_invalida" | "limite_de_iteracoes" | "recusada";
   readonly detalhe: string;
 };
 
@@ -49,23 +49,17 @@ type Andamento = {
   readonly trace: readonly PassoDoTurno[];
 };
 
-const PASSO_SEM_DECLARACAO: PassoDaResposta = {
-  etapa: "resposta",
-  resultado: "nao_declarou",
-  detalhe: "o modelo respondeu com texto solto, fora da tool responder",
-};
+const CONCLUSAO_DA_RECUSA = semDeclaracao(
+  RESPOSTA_DA_RECUSA,
+  "recusada",
+  "o modelo recusou responder",
+);
 
-const CONCLUSAO_DA_RECUSA = semDeclaracao(RESPOSTA_DA_RECUSA, {
-  etapa: "resposta",
-  resultado: "recusada",
-  detalhe: "o modelo recusou responder",
-});
-
-const CONCLUSAO_DO_LIMITE = semDeclaracao(RESPOSTA_DO_LIMITE_DE_ITERACOES, {
-  etapa: "resposta",
-  resultado: "limite_de_iteracoes",
-  detalhe: `o modelo pediu tools ${String(LIMITE_DE_ITERACOES)} vezes sem responder`,
-});
+const CONCLUSAO_DO_LIMITE = semDeclaracao(
+  RESPOSTA_DO_LIMITE_DE_ITERACOES,
+  "limite_de_iteracoes",
+  `o modelo pediu tools ${String(LIMITE_DE_ITERACOES)} vezes sem responder`,
+);
 
 export function executarTurno(
   turno: TurnoPronto,
@@ -124,12 +118,31 @@ function traduzirDecisao(decisao: DecisaoFinal): Conclusao {
         passos: [],
       };
     case "texto_solto":
-      return semDeclaracao(decisao.texto, PASSO_SEM_DECLARACAO);
+      return semDeclaracao(
+        decisao.texto,
+        "nao_declarou",
+        "o modelo respondeu com texto solto, fora da tool responder",
+      );
+    case "declaracao_invalida":
+      return semDeclaracao(
+        decisao.mensagem,
+        "declaracao_invalida",
+        `o modelo chamou responder com campos inválidos: ${decisao.campos.join(", ")}`,
+      );
     case "recusa":
       return CONCLUSAO_DA_RECUSA;
   }
 }
 
-function semDeclaracao(mensagem: string, motivo: PassoDaResposta): Conclusao {
-  return { mensagem, declaracao: null, confianca: "baixa", passos: [motivo] };
+function semDeclaracao(
+  mensagem: string,
+  resultado: PassoDaResposta["resultado"],
+  detalhe: string,
+): Conclusao {
+  return {
+    mensagem,
+    declaracao: null,
+    confianca: "baixa",
+    passos: [{ etapa: "resposta", resultado, detalhe }],
+  };
 }

@@ -109,7 +109,7 @@ describe("MastraAgentStep: o que vem malformado do modelo não derruba o turno",
     expect(await passo(modelo).decidir(contexto)).toEqual({ tipo: "recusa" });
   });
 
-  it("Dado um responder com a declaração inválida, Então a mensagem vira texto solto", async () => {
+  it("Dado um responder com a declaração inválida, Então a decisão leva a mensagem e os campos inválidos", async () => {
     const modelo = modeloQueResponde({
       conteudo: [
         chamada("toolu_1", "responder", {
@@ -120,8 +120,9 @@ describe("MastraAgentStep: o que vem malformado do modelo não derruba o turno",
     });
 
     expect(await passo(modelo).decidir(contexto)).toEqual({
-      tipo: "texto_solto",
-      texto: "Está aberto.",
+      tipo: "declaracao_invalida",
+      mensagem: "Está aberto.",
+      campos: ["declaracao.confianca", "declaracao.porque"],
     });
   });
 

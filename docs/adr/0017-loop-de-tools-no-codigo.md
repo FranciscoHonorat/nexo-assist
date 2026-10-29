@@ -23,11 +23,13 @@ e trocar de framework exigiria reescrevê-las.
 O loop é código nosso (`executarTurno`, em `src/agent/turno.ts`). O `AgentStep` faz **uma
 decisão por chamada**: recebe o contexto e devolve uma `Decisao`.
 
-| Decisão       | O que o loop faz                                                                |
-| ------------- | ------------------------------------------------------------------------------- |
-| `responder`   | Conclui o turno com a mensagem e a declaração do modelo                         |
-| `texto_solto` | Conclui com o texto como mensagem, sem declaração e com confiança baixa         |
-| `tools`       | Executa as tools e chama o modelo de novo com os resultados; para na 5ª chamada |
+| Decisão               | O que o loop faz                                                                |
+| --------------------- | ------------------------------------------------------------------------------- |
+| `responder`           | Conclui o turno com a mensagem e a declaração do modelo                         |
+| `texto_solto`         | Conclui com o texto como mensagem, sem declaração e com confiança baixa         |
+| `declaracao_invalida` | Como `texto_solto`, e o trace lista os campos que o modelo errou                |
+| `recusa`              | Conclui com uma mensagem fixa que oferece um analista, com confiança baixa      |
+| `tools`               | Executa as tools e chama o modelo de novo com os resultados; para na 5ª chamada |
 
 - **Entrada só pelas guardas.** `executarTurno` aceita apenas `TurnoPronto`
   ([ADR-0016](0016-guardas-do-turno.md)).
@@ -89,5 +91,5 @@ chamado de outro dono, então o agent não revela que o chamado existe.
 1. [x] Interface `AgentStep` e modelo roteirizado.
 2. [x] Loop com limite, fallback e trace.
 3. [x] Tools `consultar_chamados` e `obter_chamado`.
-4. [ ] `MastraAgentStep` traduzindo uma chamada ao modelo em `Decisao` (passo 7d).
+4. [x] `MastraAgentStep` traduzindo uma chamada ao modelo em `Decisao` (passo 7d).
 5. [ ] Tools de rascunho, confirmação e transferência.

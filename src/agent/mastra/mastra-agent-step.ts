@@ -135,7 +135,8 @@ function paraResposta(argumentos: unknown, texto: string): Decisao {
   const lidos = argumentosDoResponder.safeParse(argumentos);
   if (lidos.success) return { tipo: "responder", ...lidos.data };
   const mensagem = mensagemSemDeclaracao.safeParse(argumentos).data?.mensagem ?? texto;
-  return { tipo: "texto_solto", texto: mensagem };
+  const campos = lidos.error.issues.map(({ path }) => path.join("."));
+  return { tipo: "declaracao_invalida", mensagem, campos };
 }
 
 function paraChamada(chamada: ChamadaDoModelo): ChamadaDeTool {
