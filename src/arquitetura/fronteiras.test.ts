@@ -103,6 +103,30 @@ describe("Fronteira da infraestrutura compartilhada", () => {
   });
 });
 
+describe("Fronteira do framework de agent", () => {
+  it.each(["@mastra/core/agent", "@mastra/core/tools", "ai", "ai/test", "@ai-sdk/anthropic"])(
+    "fora de src/agent/mastra, importar %s viola a fronteira",
+    async (importacao) => {
+      expect(await violacoes("src/agent/turno.ts", importacao)).toEqual([
+        expect.stringContaining("só dentro de src/agent/mastra"),
+      ]);
+    },
+  );
+
+  it("dentro de src/agent/mastra, o adaptador usa o framework", async () => {
+    expect(await violacoes("src/agent/mastra/mastra-agent-step.ts", "@mastra/core/agent")).toEqual(
+      [],
+    );
+  });
+
+  it.each(["aiko", "./ai.js"])(
+    "um módulo que só começa com ai não é o AI SDK: %s",
+    async (importacao) => {
+      expect(await violacoes("src/agent/turno.ts", importacao)).toEqual([]);
+    },
+  );
+});
+
 describe("Reexportações", () => {
   it.each([
     'export { ticketClientEmMemoria } from "../tickets/em-memoria.js";',

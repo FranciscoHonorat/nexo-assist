@@ -36,6 +36,14 @@ const FRONTEIRAS: readonly Fronteira[] = [
     porque: "Fora de src/conversas, as conversas são usadas só pela interface Conversas.",
   },
   {
+    nome: "do-framework-de-agent",
+    protege: ["src/**/*.ts"],
+    exceto: ["src/agent/mastra/**"],
+    proibe: pacotes("@mastra/*", "@ai-sdk/*", "ai"),
+    porque:
+      "Mastra e AI SDK só dentro de src/agent/mastra; o resto usa a interface AgentStep (ADR-0005).",
+  },
+  {
     nome: "do-dominio",
     protege: ["src/domain/**/*.ts"],
     proibe: /^\.\.\//,
@@ -49,6 +57,17 @@ const FRONTEIRAS: readonly Fronteira[] = [
       "A infraestrutura compartilhada não depende dos módulos de negócio: são eles que dependem dela.",
   },
 ];
+
+function pacotes(...nomes: readonly string[]): RegExp {
+  const alternativas = nomes.map((nome) =>
+    nome.endsWith("/*") ? escapar(nome.slice(0, -1)) : `${escapar(nome)}(/|$)`,
+  );
+  return new RegExp(`^(${alternativas.join("|")})`);
+}
+
+function escapar(texto: string): string {
+  return texto.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&");
+}
 
 const PLUGIN = "fronteiras";
 
