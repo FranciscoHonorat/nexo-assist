@@ -7,7 +7,6 @@ import {
   type Controle,
 } from "../domain/conversa.js";
 import { MINUTO } from "../domain/tempo.js";
-import { lerUserId } from "../domain/user-id.js";
 import { valorDe } from "../testes/valor-de.js";
 import {
   existente,
@@ -17,7 +16,7 @@ import {
   t0,
   t1,
 } from "../tickets/contrato/fixtures.js";
-import { ana } from "../testes/usuarios.js";
+import { ana, bruno } from "../testes/usuarios.js";
 import { ticketClientEmMemoria, type Operacao } from "../tickets/em-memoria.js";
 import type { Chamado } from "../domain/chamado.js";
 import {
@@ -26,8 +25,6 @@ import {
   type NomeDaGuarda,
   type PassoDaGuarda,
 } from "./guardas.js";
-
-const bruno = valorDe(lerUserId("bruno.n1@nexo.com"));
 
 const resolvidoHaSeisDias = existente("INC-20160", ana, senhaDoSap, {
   status: "resolvido",

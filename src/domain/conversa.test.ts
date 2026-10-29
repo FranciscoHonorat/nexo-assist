@@ -1,3 +1,4 @@
+import { bruno } from "../testes/usuarios.js";
 import { describe, expect, it } from "vitest";
 import {
   agentPodeResponder,
@@ -12,7 +13,6 @@ import { valorDe } from "../testes/valor-de.js";
 import { lerUserId } from "./user-id.js";
 
 const ana = valorDe(lerUserId("ana@nexo.com"));
-const bruno = valorDe(lerUserId("bruno.n1@nexo.com"));
 const carla = valorDe(lerUserId("carla.n2@nexo.com"));
 const t0 = new Date("2026-10-28T10:00:00Z");
 const t1 = new Date("2026-10-28T10:05:00Z");

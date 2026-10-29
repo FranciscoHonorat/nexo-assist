@@ -1,6 +1,7 @@
 import { and, asc, eq } from "drizzle-orm";
 import { novaConversa, type Conversa, type Controle } from "../../domain/conversa.js";
 import { falha, sucesso } from "../../domain/resultado.js";
+import type { UserId } from "../../domain/user-id.js";
 import type { Banco } from "../../infraestrutura/banco.js";
 import type { Conversas, ErroDeControle, Mensagem } from "../conversas.js";
 import { conversas, mensagens } from "./esquema.js";
@@ -33,6 +34,10 @@ export function conversasPostgres(db: Banco): Conversas {
         .returning({ dono: conversas.dono });
       return alteradas.length === 0 ? falha(CONTROLE_MUDOU) : sucesso(undefined);
     },
+    registrarMensagem: async (dono, { texto, agora }) => {
+      await db.insert(mensagens).values(linhaDaPergunta(dono, texto, agora));
+      return sucesso(undefined);
+    },
     registrarTurno: (dono, { pergunta, resposta, agora }) =>
       db.transaction(async (tx) => {
         const [linha] = await tx
@@ -40,9 +45,7 @@ export function conversasPostgres(db: Banco): Conversas {
           .from(conversas)
           .where(eq(conversas.dono, dono))
           .for("update");
-        await tx
-          .insert(mensagens)
-          .values({ dono, autor: "funcionario", texto: pergunta, enviadaEm: agora });
+        await tx.insert(mensagens).values(linhaDaPergunta(dono, pergunta, agora));
         if (linha?.controle !== "agent") return falha(CONTROLE_MUDOU);
         await tx.insert(mensagens).values({
           dono,
@@ -62,6 +65,10 @@ export function conversasPostgres(db: Banco): Conversas {
       return sucesso(linhas.map(paraMensagem));
     },
   };
+}
+
+function linhaDaPergunta(dono: UserId, texto: string, enviadaEm: Date) {
+  return { dono, autor: "funcionario", texto, enviadaEm } as const;
 }
 
 function colunasDoControle(conversa: Conversa<Controle>): ColunasDoControle {

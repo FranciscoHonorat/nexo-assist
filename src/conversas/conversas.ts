@@ -34,6 +34,10 @@ export type Conversas = {
     depois: Conversa<Controle>,
     esperado: Controle,
   ) => Resposta<undefined, ErroDeControle>;
+  readonly registrarMensagem: (
+    dono: UserId,
+    mensagem: { readonly texto: string; readonly agora: Date },
+  ) => Resposta<undefined>;
   readonly registrarTurno: (dono: UserId, turno: Turno) => Resposta<undefined, ErroDeControle>;
   readonly historico: (dono: UserId) => Resposta<readonly Mensagem[]>;
 };

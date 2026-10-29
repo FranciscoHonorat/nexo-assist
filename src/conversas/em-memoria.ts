@@ -30,6 +30,10 @@ export function conversasEmMemoria(): Conversas {
       porDono.set(depois.dono, depois);
       return Promise.resolve(sucesso(undefined));
     },
+    registrarMensagem: (dono, { texto, agora }) => {
+      acrescentar(dono, { autor: "funcionario", texto, enviadaEm: agora });
+      return Promise.resolve(sucesso(undefined));
+    },
     registrarTurno: (dono, { pergunta, resposta, agora }) => {
       acrescentar(dono, { autor: "funcionario", texto: pergunta, enviadaEm: agora });
       if (conversaDe(dono).controle !== "agent") return Promise.resolve(falha(CONTROLE_MUDOU));

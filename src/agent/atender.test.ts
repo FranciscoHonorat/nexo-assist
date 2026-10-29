@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { Conversas } from "../conversas/conversas.js";
 import { conversasEmMemoria } from "../conversas/em-memoria.js";
-import { ana } from "../testes/usuarios.js";
+import { assumir } from "../domain/conversa.js";
+import { colocarNaFila } from "../testes/conversas.js";
+import { ana, bruno } from "../testes/usuarios.js";
 import { valorDe } from "../testes/valor-de.js";
 import { ticketClientEmMemoria } from "../tickets/em-memoria.js";
+import type { AgentStep } from "./agent-step.js";
 import { atenderMensagem } from "./atender.js";
 import { RESPOSTA_DO_LIMITE } from "./guardas.js";
 import { agentStepRoteirizado } from "./roteirizado.js";
@@ -76,5 +79,47 @@ describe("Atender uma mensagem: conversa, guardas, agent e histórico juntos", (
       autor: "agent",
       texto: RESPOSTA_DO_LIMITE,
     });
+  });
+
+  it("Dado uma conversa na fila, Quando a Ana manda uma mensagem, Então ela fica no histórico para o analista e o agent fica em silêncio", async () => {
+    const servicos = dependencias();
+    await colocarNaFila(servicos.conversas, ana, agora);
+
+    const atendimento = await atenderMensagem(
+      { usuario: ana, mensagem: "alguém aí?", agora },
+      servicos,
+    );
+
+    expect(valorDe(atendimento)).toEqual({ tipo: "silencio", motivo: "conversa_na_fila" });
+    expect(servicos.modelo.contextosRecebidos).toEqual([]);
+    expect(valorDe(await servicos.conversas.historico(ana))).toEqual([
+      { autor: "funcionario", texto: "alguém aí?", enviadaEm: agora },
+    ]);
+  });
+
+  it("Dado que um analista assume enquanto o modelo decide, Quando o agent termina, Então a resposta não é gravada e o atendimento é silêncio", async () => {
+    const conversas = conversasEmMemoria();
+    const roteiro = agentStepRoteirizado([
+      { tipo: "responder", declaracao, mensagem: "Já resolvo isso!" },
+    ]);
+    const modeloLento: AgentStep = {
+      decidir: async (contexto) => {
+        const fila = await colocarNaFila(conversas, ana, agora);
+        valorDe(
+          await conversas.transicionar(assumir(fila, { analista: bruno, agora }), "aguardando"),
+        );
+        return roteiro.decidir(contexto);
+      },
+    };
+
+    const atendimento = await atenderMensagem(
+      { usuario: ana, mensagem: "meu acesso caiu", agora },
+      { conversas, chamados: ticketClientEmMemoria({ chamados: [] }), modelo: modeloLento },
+    );
+
+    expect(valorDe(atendimento)).toEqual({ tipo: "silencio", motivo: "analista_assumiu" });
+    expect(valorDe(await conversas.historico(ana))).toEqual([
+      { autor: "funcionario", texto: "meu acesso caiu", enviadaEm: agora },
+    ]);
   });
 });

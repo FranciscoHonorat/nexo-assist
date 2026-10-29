@@ -31,4 +31,18 @@ export function cenariosDosTurnos(fabricar: FabricaDeConversas): void {
       expect(valorDe(await conversas.atual(ana)).mensagensNaSessao).toBe(1);
     });
   });
+
+  describe("registrarMensagem", () => {
+    it("Dado uma conversa, Quando só o funcionário fala, Então a mensagem entra no histórico e conta na sessão", async () => {
+      const conversas = await fabricar();
+      valorDe(await conversas.atual(ana));
+
+      valorDe(await conversas.registrarMensagem(ana, { texto: "alguém aí?", agora }));
+
+      expect(valorDe(await conversas.historico(ana))).toEqual([
+        { autor: "funcionario", texto: "alguém aí?", enviadaEm: agora },
+      ]);
+      expect(valorDe(await conversas.atual(ana)).mensagensNaSessao).toBe(1);
+    });
+  });
 }
