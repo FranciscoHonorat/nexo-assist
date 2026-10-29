@@ -56,7 +56,7 @@ export type ConversaFinalizada = {
 
 export type ErroDeTransferencia = { readonly motivo: "resumo_vazio" };
 
-export type ErroDeFinalizacao = { readonly motivo: "nao_e_o_analista"; readonly tentouPor: UserId };
+export type ErroDoAnalista = { readonly motivo: "nao_e_o_analista"; readonly tentouPor: UserId };
 
 type PedidoDeTransferencia = {
   readonly motivo: MotivoDeTransferencia;
@@ -104,13 +104,23 @@ export function assumir(
 export function finalizar(
   conversa: Conversa<"analista">,
   { desfecho, por, agora }: Finalizacao,
-): Resultado<ConversaFinalizada, ErroDeFinalizacao> {
-  if (por !== conversa.analista) return falha({ motivo: "nao_e_o_analista", tentouPor: por });
+): Resultado<ConversaFinalizada, ErroDoAnalista> {
+  const doAnalista = peloAnalista(conversa, por);
+  if (!doAnalista.ok) return doAnalista;
   const { controle, ...atendimento } = conversa;
   return sucesso({
     conversa: novaConversa({ dono: conversa.dono }),
     atendimento: Object.freeze({ ...atendimento, desfecho, finalizadoEm: agora }),
   });
+}
+
+export function peloAnalista(
+  conversa: Conversa<"analista">,
+  por: UserId,
+): Resultado<Conversa<"analista">, ErroDoAnalista> {
+  return por === conversa.analista
+    ? sucesso(conversa)
+    : falha({ motivo: "nao_e_o_analista", tentouPor: por });
 }
 
 export function agentPodeResponder(conversa: Conversa<Controle>): conversa is Conversa<"agent"> {
