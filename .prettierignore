@@ -1,3 +1,5 @@
 coverage/
 package-lock.json
 drizzle/
+dist/
+web/dist/

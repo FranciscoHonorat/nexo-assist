@@ -9,7 +9,10 @@
   },
   "scripts": {
     "prepare": "lefthook install",
-    "typecheck": "tsc --noEmit",
+    "dev:web": "vite --config web/vite.config.ts",
+    "build": "tsc -p tsconfig.build.json && vite build --config web/vite.config.ts",
+    "start": "node --env-file-if-exists=.env dist/composicao/principal.js",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p web",
     "lint": "eslint . --max-warnings=0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -26,6 +29,9 @@
     "@eslint/js": "10.0.1",
     "@types/node": "24.19.2",
     "@types/pg": "8.23.1",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.2",
     "@vitest/coverage-v8": "5.0.5",
     "drizzle-kit": "0.31.11",
     "eslint": "10.13.0",
@@ -33,14 +39,19 @@
     "prettier": "3.9.10",
     "typescript": "6.0.3",
     "typescript-eslint": "8.72.1",
+    "vite": "8.3.4",
     "vitest": "5.0.5"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "4.0.82",
+    "@hono/node-server": "2.1.5",
     "@mastra/core": "1.80.0",
     "ai": "7.0.143",
     "drizzle-orm": "0.45.4",
+    "hono": "4.13.13",
     "pg": "8.23.1",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
     "zod": "4.6.7"
   }
 }

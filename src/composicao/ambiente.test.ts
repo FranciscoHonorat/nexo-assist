@@ -6,6 +6,7 @@ const VALIDO = {
   ANTHROPIC_API_KEY: "sk-ant-segredo",
   LLM_MODEL: "claude-haiku-5-5",
   LLM_EFFORT: "medium",
+  SESSION_SECRET: "um-segredo-de-sessao-com-32-caracteres!",
 };
 
 describe("Ambiente lido no boot", () => {
@@ -16,6 +17,7 @@ describe("Ambiente lido no boot", () => {
         banco: VALIDO.DATABASE_URL,
         porta: 3000,
         modelo: { chave: "sk-ant-segredo", nome: "claude-haiku-5-5", esforco: "medium" },
+        sessao: { segredo: VALIDO.SESSION_SECRET, cookieSeguro: false },
       },
     });
   });
@@ -39,8 +41,21 @@ describe("Ambiente lido no boot", () => {
       ok: false,
       erro: {
         motivo: "variaveis_invalidas",
-        variaveis: ["ANTHROPIC_API_KEY", "LLM_MODEL", "LLM_EFFORT", "PORT"],
+        variaveis: ["ANTHROPIC_API_KEY", "LLM_MODEL", "LLM_EFFORT", "PORT", "SESSION_SECRET"],
       },
+    });
+  });
+
+  it("em produção, o cookie da sessão só viaja por HTTPS", () => {
+    expect(lerAmbiente({ ...VALIDO, NODE_ENV: "production" })).toMatchObject({
+      valor: { sessao: { cookieSeguro: true } },
+    });
+  });
+
+  it("um segredo de sessão curto é recusado, porque assinaria sessões fáceis de forjar", () => {
+    expect(lerAmbiente({ ...VALIDO, SESSION_SECRET: "curto" })).toEqual({
+      ok: false,
+      erro: { motivo: "variaveis_invalidas", variaveis: ["SESSION_SECRET"] },
     });
   });
 

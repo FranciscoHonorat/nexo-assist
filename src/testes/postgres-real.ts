@@ -1,5 +1,5 @@
 import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
-import { migrate } from "drizzle-orm/node-postgres/migrator";
+import { migrarComTrava } from "../infraestrutura/migracao.js";
 import { getTableName } from "drizzle-orm";
 import pg from "pg";
 import type { Conversas } from "../conversas/conversas.js";
@@ -15,19 +15,10 @@ type BancoReal = {
 
 let conectado: Promise<BancoReal> | undefined;
 
-const TRAVA_DAS_MIGRACOES = 2026_10_29;
-
 async function conectarEMigrar(url: string): Promise<BancoReal> {
   const pool = new pg.Pool({ connectionString: url, max: 10 });
+  await migrarComTrava(pool, "drizzle");
   const db = drizzle(pool);
-  const cliente = await pool.connect();
-  try {
-    await cliente.query("SELECT pg_advisory_lock($1)", [TRAVA_DAS_MIGRACOES]);
-    await migrate(db, { migrationsFolder: "drizzle" });
-  } finally {
-    await cliente.query("SELECT pg_advisory_unlock($1)", [TRAVA_DAS_MIGRACOES]);
-    cliente.release();
-  }
   return { pool, db };
 }
 

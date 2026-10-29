@@ -7,7 +7,10 @@ export type Ambiente = {
   readonly banco: string;
   readonly porta: number;
   readonly modelo: ModeloDaAnthropic;
+  readonly sessao: { readonly segredo: string; readonly cookieSeguro: boolean };
 };
+
+const TAMANHO_MINIMO_DO_SEGREDO = 32;
 
 export type ErroDeAmbiente = {
   readonly motivo: "variaveis_invalidas";
@@ -23,6 +26,8 @@ const ambiente = z
     LLM_MODEL: z.enum(MODELOS_DA_ANTHROPIC),
     LLM_EFFORT: z.enum(ESFORCOS),
     PORT: z.coerce.number().int().min(1).max(65535).default(3000),
+    SESSION_SECRET: z.string().min(TAMANHO_MINIMO_DO_SEGREDO),
+    NODE_ENV: z.string().optional(),
   })
   .transform((variaveis): Ambiente => ({
     banco: variaveis.DATABASE_URL,
@@ -31,6 +36,10 @@ const ambiente = z
       chave: variaveis.ANTHROPIC_API_KEY,
       nome: variaveis.LLM_MODEL,
       esforco: variaveis.LLM_EFFORT,
+    },
+    sessao: {
+      segredo: variaveis.SESSION_SECRET,
+      cookieSeguro: variaveis.NODE_ENV === "production",
     },
   }));
 
