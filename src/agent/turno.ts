@@ -10,9 +10,14 @@ import type {
 } from "./agent-step.js";
 import type { PassoDaGuarda, TurnoPronto } from "./guardas.js";
 
+export const LIMITE_DE_ITERACOES = 5;
+
+export const RESPOSTA_DO_LIMITE_DE_ITERACOES =
+  "Não consegui concluir seu pedido agora. Se quiser, posso chamar um analista para te ajudar.";
+
 export type PassoDaResposta = {
   readonly etapa: "resposta";
-  readonly resultado: "nao_declarou";
+  readonly resultado: "nao_declarou" | "limite_de_iteracoes";
   readonly detalhe: string;
 };
 
@@ -49,6 +54,7 @@ type Execucao = {
 };
 
 type Andamento = {
+  readonly iteracoes: number;
   readonly resultadosDeTools: readonly ResultadoDeTool[];
   readonly trace: readonly PassoDoTurno[];
 };
@@ -65,7 +71,7 @@ export function executarTurno(
 ): Promise<RespostaDoTurno> {
   return decidirAteResponder(
     { turno, modelo, chamados },
-    { resultadosDeTools: [], trace: turno.trace },
+    { iteracoes: 0, resultadosDeTools: [], trace: turno.trace },
   );
 }
 
@@ -83,6 +89,21 @@ async function decidirAteResponder(
     const { passos, ...resposta } = traduzirDecisao(decisao);
     return { ...resposta, trace: [...andamento.trace, ...passos] };
   }
+  if (andamento.iteracoes + 1 === LIMITE_DE_ITERACOES) {
+    return {
+      mensagem: RESPOSTA_DO_LIMITE_DE_ITERACOES,
+      declaracao: null,
+      confianca: "baixa",
+      trace: [
+        ...andamento.trace,
+        {
+          etapa: "resposta",
+          resultado: "limite_de_iteracoes",
+          detalhe: `o modelo pediu tools ${String(LIMITE_DE_ITERACOES)} vezes sem responder`,
+        },
+      ],
+    };
+  }
   const executadas = await Promise.all(
     decisao.chamadas.map((chamada) => executarTool(chamada, turno.usuario, chamados)),
   );
@@ -91,6 +112,7 @@ async function decidirAteResponder(
 
 function registrar(andamento: Andamento, executadas: readonly ToolExecutada[]): Andamento {
   return {
+    iteracoes: andamento.iteracoes + 1,
     resultadosDeTools: [
       ...andamento.resultadosDeTools,
       ...executadas.map((executada) => executada.resultado),

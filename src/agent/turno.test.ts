@@ -14,7 +14,7 @@ import { ticketClientEmMemoria } from "../tickets/em-memoria.js";
 import { prepararTurno } from "./guardas.js";
 import type { ChamadaDeTool, Decisao, Declaracao } from "./agent-step.js";
 import { agentStepRoteirizado } from "./roteirizado.js";
-import { executarTurno } from "./turno.js";
+import { executarTurno, LIMITE_DE_ITERACOES, RESPOSTA_DO_LIMITE_DE_ITERACOES } from "./turno.js";
 
 async function cenarioDaAna(mensagem: string, chamados: readonly Chamado[] = []) {
   const cliente = ticketClientEmMemoria({ chamados });
@@ -107,6 +107,33 @@ describe("Tool consultar_chamados: o agent vê só os chamados de quem está fal
       nome: "consultar_chamados",
       resultado: "executou",
       detalhe: "2 chamados: INC-20311, REQ-10442",
+    });
+  });
+});
+
+describe("Limite de iterações: o modelo não fica preso num loop de tools", () => {
+  it("Dado um modelo que só pede tools, Quando o turno roda, Então ele é chamado 5 vezes e o turno termina com uma resposta fixa", async () => {
+    const { turno, chamados } = await cenarioDaAna("e meus chamados?", [incidenteDaAna]);
+    const modelo = agentStepRoteirizado(
+      Array.from({ length: LIMITE_DE_ITERACOES + 1 }, () =>
+        chamaTools({ tool: "consultar_chamados" }),
+      ),
+    );
+
+    const resposta = await executarTurno(turno, modelo, chamados);
+
+    expect(LIMITE_DE_ITERACOES).toBe(5);
+    expect(modelo.contextosRecebidos).toHaveLength(5);
+    expect(resposta).toMatchObject({
+      mensagem: RESPOSTA_DO_LIMITE_DE_ITERACOES,
+      declaracao: null,
+      confianca: "baixa",
+    });
+    expect(resposta.trace.filter((passo) => passo.etapa === "tool")).toHaveLength(4);
+    expect(resposta.trace.at(-1)).toEqual({
+      etapa: "resposta",
+      resultado: "limite_de_iteracoes",
+      detalhe: "o modelo pediu tools 5 vezes sem responder",
     });
   });
 });
