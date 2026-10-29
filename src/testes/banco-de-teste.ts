@@ -29,8 +29,12 @@ export async function migrarBancoDeTeste(): Promise<void> {
 }
 
 export async function bancoDeTeste(inicial: EstadoInicial): Promise<TicketClient> {
+  return (await bancoDeTesteComDrizzle(inicial)).servico;
+}
+
+export async function bancoDeTesteComDrizzle(inicial: EstadoInicial) {
   const { pglite, db } = await (migrado ??= criarEMigrar());
-  return prepararBanco(db, (comandos) => pglite.exec(comandos), inicial);
+  return { db, servico: await prepararBanco(db, (comandos) => pglite.exec(comandos), inicial) };
 }
 
 export async function conversasDeTeste(): Promise<Conversas> {

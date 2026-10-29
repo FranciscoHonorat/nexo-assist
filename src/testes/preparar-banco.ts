@@ -2,6 +2,7 @@ import { getTableName } from "drizzle-orm";
 import { chamados, complementos, SEQUENCIA_POR_TIPO } from "../tickets/postgres/esquema.js";
 import type { Banco } from "../infraestrutura/banco.js";
 import { ticketClientPostgres } from "../tickets/postgres/cliente.js";
+import { semearChamados } from "../tickets/postgres/semente.js";
 import type { EstadoInicial, TicketClient } from "../tickets/ticket-client.js";
 
 const LIMPEZA = [
@@ -15,18 +16,6 @@ export async function prepararBanco(
   { chamados: iniciais }: EstadoInicial,
 ): Promise<TicketClient> {
   await executarSql(LIMPEZA);
-  for (const chamado of iniciais) {
-    await db.insert(chamados).values({
-      id: chamado.id,
-      dono: chamado.dono,
-      ...chamado.dados,
-      status: chamado.status,
-      criadoEm: chamado.criadoEm,
-      atualizadoEm: chamado.atualizadoEm,
-    });
-    for (const complemento of chamado.complementos) {
-      await db.insert(complementos).values({ chamadoId: chamado.id, ...complemento });
-    }
-  }
+  await semearChamados(db, iniciais);
   return ticketClientPostgres(db);
 }
