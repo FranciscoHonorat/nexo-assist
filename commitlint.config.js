@@ -10,6 +10,7 @@ export default {
         "conversas",
         "agent",
         "ajuda",
+        "acesso",
         "console",
         "tempo-real",
         "composicao",
