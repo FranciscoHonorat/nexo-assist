@@ -12,6 +12,7 @@ export function conversasQueAvisam(conversas: Conversas, avisos: Avisos): Conver
     };
   return {
     atual: (dono) => conversas.atual(dono),
+    listar: () => conversas.listar(),
     historico: (dono, depois) => conversas.historico(dono, depois),
     guardarRascunho: (rascunho) => conversas.guardarRascunho(rascunho),
     rascunhoPendente: (id, dono) => conversas.rascunhoPendente(id, dono),

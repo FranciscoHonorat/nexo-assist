@@ -5,7 +5,7 @@ import { falha } from "../domain/resultado.js";
 import { INDISPONIVEL } from "../infraestrutura/indisponivel.js";
 import { ana, joao } from "../testes/usuarios.js";
 import { valorDe } from "../testes/valor-de.js";
-import { acompanharConversa } from "./acompanhar.js";
+import { acompanharAvisos, acompanharConversa } from "./acompanhar.js";
 import { avisosEmProcesso, type Avisos } from "./avisos.js";
 import { conversasQueAvisam } from "./conversas-que-avisam.js";
 
@@ -186,3 +186,22 @@ function contandoOuvintes(avisos: Avisos) {
     ouvintes: () => ativos,
   };
 }
+
+describe("Acompanhar os avisos de todas as conversas (console)", () => {
+  it("Dado avisos seguidos, Então cada um chega uma vez, na ordem, e desconectar para de ouvir", async () => {
+    const avisos = contandoOuvintes(avisosEmProcesso());
+    const controle = new AbortController();
+    const acompanhando = acompanharAvisos(avisos, controle.signal);
+
+    const primeiro = acompanhando.next();
+    avisos.avisar({ dono: ana });
+    avisos.avisar({ dono: joao });
+
+    expect(await primeiro).toEqual({ done: false, value: { dono: ana } });
+    expect(await acompanhando.next()).toEqual({ done: false, value: { dono: joao } });
+    const terminando = acompanhando.next();
+    controle.abort();
+    expect(await terminando).toEqual({ done: true, value: undefined });
+    expect(avisos.ouvintes()).toBe(0);
+  });
+});
