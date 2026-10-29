@@ -9,6 +9,7 @@ export default {
         "tickets",
         "conversas",
         "agent",
+        "ajuda",
         "composicao",
         "arquitetura",
         "api",
