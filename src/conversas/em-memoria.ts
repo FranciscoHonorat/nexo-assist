@@ -3,7 +3,17 @@ import { falha, sucesso } from "../domain/resultado.js";
 import type { UserId } from "../domain/user-id.js";
 import type { RascunhoId } from "../domain/rascunho-id.js";
 import type { Rascunho, StatusRascunho } from "../domain/rascunho.js";
-import type { Conversas, ErroDeControle, Mensagem } from "./conversas.js";
+import {
+  DESDE_O_COMECO,
+  eventoDa,
+  eventoDaResolucao,
+  mesmoControle,
+  resolvidoEm,
+  type ConteudoDaMensagem,
+  type Conversas,
+  type ErroDeControle,
+  type Mensagem,
+} from "./conversas.js";
 
 const CONTROLE_MUDOU: ErroDeControle = { motivo: "controle_mudou" };
 
@@ -11,44 +21,61 @@ export function conversasEmMemoria(): Conversas {
   const porDono = new Map<UserId, Conversa<Controle>>();
   const mensagensPorDono = new Map<UserId, readonly Mensagem[]>();
   const rascunhos = new Map<RascunhoId, Rascunho<StatusRascunho>>();
+  const sessaoDesde = new Map<UserId, number>();
   const conversaDe = (dono: UserId) => porDono.get(dono) ?? novaConversa({ dono });
   const mensagensDe = (dono: UserId) => mensagensPorDono.get(dono) ?? [];
-  const acrescentar = (dono: UserId, ...novas: Mensagem[]) => {
-    mensagensPorDono.set(dono, [...mensagensDe(dono), ...novas]);
+  const daSessao = (dono: UserId, depois = DESDE_O_COMECO) => {
+    const desde = Math.max(depois, sessaoDesde.get(dono) ?? DESDE_O_COMECO);
+    return mensagensDe(dono).filter((mensagem) => mensagem.id > desde);
+  };
+  let ultimoId = 0;
+  const acrescentar = (dono: UserId, enviadaEm: Date, conteudo: ConteudoDaMensagem) => {
+    ultimoId += 1;
+    mensagensPorDono.set(dono, [...mensagensDe(dono), { ...conteudo, id: ultimoId, enviadaEm }]);
   };
 
   return {
     atual: (dono) => {
       const conversa = conversaDe(dono);
       porDono.set(dono, conversa);
-      const mensagensNaSessao = mensagensDe(dono).filter(
+      const mensagensNaSessao = daSessao(dono).filter(
         (mensagem) => mensagem.autor === "funcionario",
       ).length;
       return Promise.resolve(sucesso({ conversa, mensagensNaSessao }));
     },
-    transicionar: (depois, esperado) => {
-      if (conversaDe(depois.dono).controle !== esperado) {
+    transicionar: (transicao, agora) => {
+      const { antes, depois } = transicao;
+      if (!mesmoControle(conversaDe(depois.dono), antes)) {
         return Promise.resolve(falha(CONTROLE_MUDOU));
       }
       porDono.set(depois.dono, depois);
+      acrescentar(depois.dono, agora, { autor: "sistema", evento: eventoDa(transicao) });
       return Promise.resolve(sucesso(undefined));
     },
     registrarMensagem: (dono, { texto, agora }) => {
-      acrescentar(dono, { autor: "funcionario", texto, enviadaEm: agora });
+      acrescentar(dono, agora, { autor: "funcionario", texto });
+      return Promise.resolve(sucesso(undefined));
+    },
+    registrarMensagemDoAnalista: (conversa, { texto, agora }) => {
+      if (!mesmoControle(conversaDe(conversa.dono), conversa)) {
+        return Promise.resolve(falha(CONTROLE_MUDOU));
+      }
+      acrescentar(conversa.dono, agora, { autor: "analista", analista: conversa.analista, texto });
       return Promise.resolve(sucesso(undefined));
     },
     registrarTurno: (dono, { pergunta, resposta, agora }) => {
-      acrescentar(dono, { autor: "funcionario", texto: pergunta, enviadaEm: agora });
+      acrescentar(dono, agora, { autor: "funcionario", texto: pergunta });
       if (conversaDe(dono).controle !== "agent") return Promise.resolve(falha(CONTROLE_MUDOU));
-      acrescentar(dono, {
-        autor: "agent",
-        texto: resposta.texto,
-        enviadaEm: agora,
-        registro: resposta.registro,
-      });
+      acrescentar(dono, agora, { autor: "agent", ...resposta });
       return Promise.resolve(sucesso(undefined));
     },
-    historico: (dono) => Promise.resolve(sucesso(mensagensDe(dono))),
+    iniciarSessao: (dono, agora) => {
+      if (conversaDe(dono).controle !== "agent") return Promise.resolve(falha(CONTROLE_MUDOU));
+      sessaoDesde.set(dono, ultimoId);
+      acrescentar(dono, agora, { autor: "sistema", evento: { tipo: "sessao_iniciada" } });
+      return Promise.resolve(sucesso(undefined));
+    },
+    historico: (dono, depois) => Promise.resolve(sucesso(daSessao(dono, depois))),
     guardarRascunho: (rascunho) => {
       rascunhos.set(rascunho.id, rascunho);
       return Promise.resolve(sucesso(undefined));
@@ -63,13 +90,18 @@ export function conversasEmMemoria(): Conversas {
       }
       return Promise.resolve(sucesso(rascunho));
     },
-    resolverRascunho: (resolvido) => {
+    resolverRascunho: (resolucao) => {
+      const resolvido = resolucao.rascunho;
       const atual = rascunhos.get(resolvido.id);
       if (atual === undefined) throw new Error("rascunho resolvido sem ter sido guardado");
       if (atual.status !== "pendente") {
         return Promise.resolve(falha({ motivo: "rascunho_ja_resolvido", status: atual.status }));
       }
       rascunhos.set(resolvido.id, resolvido);
+      acrescentar(resolvido.dono, resolvidoEm(resolucao), {
+        autor: "sistema",
+        evento: eventoDaResolucao(resolucao),
+      });
       return Promise.resolve(sucesso(undefined));
     },
   };

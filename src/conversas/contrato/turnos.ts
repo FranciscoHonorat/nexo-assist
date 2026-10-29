@@ -1,7 +1,9 @@
+import { semIds } from "../../testes/conversas.js";
 import { describe, expect, it } from "vitest";
 import { ana } from "../../testes/usuarios.js";
 import { valorDe } from "../../testes/valor-de.js";
 import type { FabricaDeConversas } from "./index.js";
+import { DESDE_O_COMECO } from "../conversas.js";
 
 const agora = new Date("2026-10-28T13:00:00Z");
 
@@ -19,8 +21,12 @@ export function cenariosDosTurnos(fabricar: FabricaDeConversas): void {
         }),
       );
 
-      expect(valorDe(await conversas.historico(ana))).toEqual([
-        { autor: "funcionario", texto: "meu notebook está lento", enviadaEm: agora },
+      expect(semIds(valorDe(await conversas.historico(ana, DESDE_O_COMECO)))).toEqual([
+        {
+          autor: "funcionario",
+          texto: "meu notebook está lento",
+          enviadaEm: agora,
+        },
         {
           autor: "agent",
           texto: "Vou abrir um chamado.",
@@ -39,7 +45,7 @@ export function cenariosDosTurnos(fabricar: FabricaDeConversas): void {
 
       valorDe(await conversas.registrarMensagem(ana, { texto: "alguém aí?", agora }));
 
-      expect(valorDe(await conversas.historico(ana))).toEqual([
+      expect(semIds(valorDe(await conversas.historico(ana, DESDE_O_COMECO)))).toEqual([
         { autor: "funcionario", texto: "alguém aí?", enviadaEm: agora },
       ]);
       expect(valorDe(await conversas.atual(ana)).mensagensNaSessao).toBe(1);

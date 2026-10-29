@@ -36,6 +36,13 @@
       "when": 1793293902608,
       "tag": "0004_rascunhos",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793304798957,
+      "tag": "0005_eventos_analista_e_sessao",
+      "breakpoints": true
     }
   ]
 }
