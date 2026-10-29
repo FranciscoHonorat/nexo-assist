@@ -24,10 +24,16 @@ export type Turno = {
   readonly agora: Date;
 };
 
-type Resposta<T> = Promise<Resultado<T, ErroDeInfraestrutura>>;
+export type ErroDeControle = { readonly motivo: "controle_mudou" };
+
+type Resposta<T, E = never> = Promise<Resultado<T, E | ErroDeInfraestrutura>>;
 
 export type Conversas = {
   readonly atual: (dono: UserId) => Resposta<ConversaAtual>;
-  readonly registrarTurno: (dono: UserId, turno: Turno) => Resposta<undefined>;
+  readonly transicionar: (
+    depois: Conversa<Controle>,
+    esperado: Controle,
+  ) => Resposta<undefined, ErroDeControle>;
+  readonly registrarTurno: (dono: UserId, turno: Turno) => Resposta<undefined, ErroDeControle>;
   readonly historico: (dono: UserId) => Resposta<readonly Mensagem[]>;
 };

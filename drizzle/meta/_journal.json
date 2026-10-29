@@ -22,6 +22,13 @@
       "when": 1793237107379,
       "tag": "0002_mensagens",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793237403128,
+      "tag": "0003_transferencia_e_analista",
+      "breakpoints": true
     }
   ]
 }
