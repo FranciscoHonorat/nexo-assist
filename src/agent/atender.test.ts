@@ -105,13 +105,15 @@ describe("Atender uma mensagem: conversa, guardas, agent e histórico juntos", (
       { tipo: "responder", declaracao, mensagem: "Já resolvo isso!" },
     ]);
     const modeloLento: AgentStep = {
-      decidir: async (contexto) => {
-        const fila = await colocarNaFila(conversas, ana, agora);
-        valorDe(
-          await conversas.transicionar(assumir(fila, { analista: bruno, agora }), "aguardando"),
-        );
-        return roteiro.decidir(contexto);
-      },
+      iniciarTurno: () => ({
+        decidir: async (contexto) => {
+          const fila = await colocarNaFila(conversas, ana, agora);
+          valorDe(
+            await conversas.transicionar(assumir(fila, { analista: bruno, agora }), "aguardando"),
+          );
+          return roteiro.iniciarTurno().decidir(contexto);
+        },
+      }),
     };
 
     const atendimento = await atenderMensagem(

@@ -27,15 +27,22 @@ export async function executarTool(
 ): Promise<ToolExecutada> {
   switch (chamada.tool) {
     case "consultar_chamados":
-      return consultarChamados(usuario, chamados);
+      return consultarChamados(chamada.id, usuario, chamados);
     case "obter_chamado":
-      return obterChamado(chamada.argumentos.id, usuario, chamados);
+      return obterChamado(chamada.id, chamada.argumentos.id, usuario, chamados);
   }
 }
 
-async function consultarChamados(usuario: UserId, chamados: TicketClient): Promise<ToolExecutada> {
+async function consultarChamados(
+  chamada: string,
+  usuario: UserId,
+  chamados: TicketClient,
+): Promise<ToolExecutada> {
   const resposta = await chamados.listar(usuario);
-  return { resultado: { tool: "consultar_chamados", resposta }, trace: descreverLista(resposta) };
+  return {
+    resultado: { chamada, tool: "consultar_chamados", resposta },
+    trace: descreverLista(resposta),
+  };
 }
 
 function descreverLista(resposta: RespostaDa<"consultar_chamados">): ToolExecutada["trace"] {
@@ -45,12 +52,16 @@ function descreverLista(resposta: RespostaDa<"consultar_chamados">): ToolExecuta
 }
 
 async function obterChamado(
+  chamada: string,
   id: string,
   usuario: UserId,
   chamados: TicketClient,
 ): Promise<ToolExecutada> {
   const resposta = await buscarPorId(id, usuario, chamados);
-  return { resultado: { tool: "obter_chamado", resposta }, trace: descreverBusca(resposta) };
+  return {
+    resultado: { chamada, tool: "obter_chamado", resposta },
+    trace: descreverBusca(resposta),
+  };
 }
 
 async function buscarPorId(

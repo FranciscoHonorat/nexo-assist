@@ -61,8 +61,13 @@ function textoSolto(texto: string): Decisao {
   return { tipo: "texto_solto", texto };
 }
 
-function chamaTools(...chamadas: ChamadaDeTool[]): Decisao {
-  return { tipo: "tools", chamadas };
+type SemId<Chamada> = Chamada extends unknown ? Omit<Chamada, "id"> : never;
+
+function chamaTools(...pedidos: SemId<ChamadaDeTool>[]): Decisao {
+  return {
+    tipo: "tools",
+    chamadas: pedidos.map((pedido, indice) => ({ ...pedido, id: `chamada_${String(indice + 1)}` })),
+  };
 }
 
 function vistoDepoisDasTools(modelo: AgentStepRoteirizado) {
@@ -127,6 +132,7 @@ describe("Tool consultar_chamados: o agent vê só os chamados de quem está fal
     expect(resposta.mensagem).toBe("O INC-20311 está aberto e atrasado.");
     expect(vistoDepoisDasTools(modelo)).toEqual([
       {
+        chamada: "chamada_1",
         tool: "consultar_chamados",
         resposta: { ok: true, valor: [incidenteDaAna, requisicaoDaAna] },
       },
@@ -177,6 +183,7 @@ describe("Tool obter_chamado: o LLM propõe o id, o código valida antes de cons
     expect(consultas).toEqual(["listar"]);
     expect(vistoDepoisDasTools(modelo)).toEqual([
       {
+        chamada: "chamada_1",
         tool: "obter_chamado",
         resposta: { ok: false, erro: { motivo: "formato_invalido", recebido: "abc" } },
       },
@@ -197,7 +204,11 @@ describe("Tool obter_chamado: o LLM propõe o id, o código valida antes de cons
 
     expect(consultas).toEqual(["listar", "obter"]);
     expect(vistoDepoisDasTools(modelo)).toEqual([
-      { tool: "obter_chamado", resposta: { ok: true, valor: incidenteDaAna } },
+      {
+        chamada: "chamada_1",
+        tool: "obter_chamado",
+        resposta: { ok: true, valor: incidenteDaAna },
+      },
     ]);
     expect(resposta.trace).toContainEqual(
       passoDeTool("obter_chamado", "executou", "INC-20311 encontrado"),
@@ -218,6 +229,7 @@ describe("Tool obter_chamado: o LLM propõe o id, o código valida antes de cons
 
     expect(vistoDepoisDasTools(modelo)).toEqual([
       {
+        chamada: "chamada_1",
         tool: "obter_chamado",
         resposta: { ok: false, erro: { motivo: "nao_encontrado", id: incidenteDoJoao.id } },
       },
@@ -244,7 +256,11 @@ describe("Legado fora do ar durante uma tool: o turno segue e o modelo fica sabe
       "O sistema de chamados está fora do ar agora. Quer que eu chame um analista?",
     );
     expect(vistoDepoisDasTools(modelo)).toEqual([
-      { tool: "consultar_chamados", resposta: { ok: false, erro: { motivo: "indisponivel" } } },
+      {
+        chamada: "chamada_1",
+        tool: "consultar_chamados",
+        resposta: { ok: false, erro: { motivo: "indisponivel" } },
+      },
     ]);
     expect(resposta.trace).toContainEqual(
       passoDeTool("consultar_chamados", "indisponivel", "serviço de chamados indisponível"),
@@ -263,7 +279,11 @@ describe("Legado fora do ar durante uma tool: o turno segue e o modelo fica sabe
     const resposta = await executarTurno(turno, modelo, chamados);
 
     expect(vistoDepoisDasTools(modelo)).toEqual([
-      { tool: "obter_chamado", resposta: { ok: false, erro: { motivo: "indisponivel" } } },
+      {
+        chamada: "chamada_1",
+        tool: "obter_chamado",
+        resposta: { ok: false, erro: { motivo: "indisponivel" } },
+      },
     ]);
     expect(resposta.trace).toContainEqual(
       passoDeTool("obter_chamado", "indisponivel", "serviço de chamados indisponível"),

@@ -12,9 +12,10 @@ export type Declaracao = {
   readonly porque: string;
 };
 
-export type ChamadaDeTool =
+export type ChamadaDeTool = { readonly id: string } & (
   | { readonly tool: "consultar_chamados" }
-  | { readonly tool: "obter_chamado"; readonly argumentos: { readonly id: string } };
+  | { readonly tool: "obter_chamado"; readonly argumentos: { readonly id: string } }
+);
 
 type RespostaDoServico<T, E = never> = Resultado<T, E | ErroDeInfraestrutura>;
 
@@ -27,6 +28,7 @@ export type RespostaDa<Tool extends keyof RespostasPorTool> = RespostasPorTool[T
 
 export type ResultadoDeTool = {
   [Tool in keyof RespostasPorTool]: {
+    readonly chamada: string;
     readonly tool: Tool;
     readonly resposta: RespostaDa<Tool>;
   };
@@ -56,6 +58,10 @@ export type ContextoDoPasso = {
   readonly resultadosDeTools: readonly ResultadoDeTool[];
 };
 
-export type AgentStep = {
+export type SessaoDoModelo = {
   readonly decidir: (contexto: ContextoDoPasso) => Promise<Decisao>;
+};
+
+export type AgentStep = {
+  readonly iniciarTurno: () => SessaoDoModelo;
 };

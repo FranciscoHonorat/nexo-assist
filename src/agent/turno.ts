@@ -1,6 +1,7 @@
 import type { TicketClient } from "../tickets/ticket-client.js";
 import type {
   AgentStep,
+  SessaoDoModelo,
   Confianca,
   DecisaoFinal,
   Declaracao,
@@ -35,7 +36,7 @@ type Conclusao = Omit<RespostaDoTurno, "trace"> & {
 
 type Execucao = {
   readonly turno: TurnoPronto;
-  readonly modelo: AgentStep;
+  readonly modelo: SessaoDoModelo;
   readonly chamados: TicketClient;
 };
 
@@ -63,7 +64,7 @@ export function executarTurno(
   chamados: TicketClient,
 ): Promise<RespostaDoTurno> {
   return decidirAteResponder(
-    { turno, modelo, chamados },
+    { turno, modelo: modelo.iniciarTurno(), chamados },
     { chamadasAoModelo: 0, resultadosDeTools: [], trace: turno.trace },
   );
 }
