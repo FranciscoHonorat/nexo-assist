@@ -29,6 +29,13 @@
       "when": 1793237403128,
       "tag": "0003_transferencia_e_analista",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793293902608,
+      "tag": "0004_rascunhos",
+      "breakpoints": true
     }
   ]
 }

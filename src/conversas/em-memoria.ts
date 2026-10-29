@@ -1,6 +1,8 @@
 import { novaConversa, type Conversa, type Controle } from "../domain/conversa.js";
 import { falha, sucesso } from "../domain/resultado.js";
 import type { UserId } from "../domain/user-id.js";
+import type { RascunhoId } from "../domain/rascunho-id.js";
+import type { Rascunho, StatusRascunho } from "../domain/rascunho.js";
 import type { Conversas, ErroDeControle, Mensagem } from "./conversas.js";
 
 const CONTROLE_MUDOU: ErroDeControle = { motivo: "controle_mudou" };
@@ -8,6 +10,7 @@ const CONTROLE_MUDOU: ErroDeControle = { motivo: "controle_mudou" };
 export function conversasEmMemoria(): Conversas {
   const porDono = new Map<UserId, Conversa<Controle>>();
   const mensagensPorDono = new Map<UserId, readonly Mensagem[]>();
+  const rascunhos = new Map<RascunhoId, Rascunho<StatusRascunho>>();
   const conversaDe = (dono: UserId) => porDono.get(dono) ?? novaConversa({ dono });
   const mensagensDe = (dono: UserId) => mensagensPorDono.get(dono) ?? [];
   const acrescentar = (dono: UserId, ...novas: Mensagem[]) => {
@@ -46,5 +49,28 @@ export function conversasEmMemoria(): Conversas {
       return Promise.resolve(sucesso(undefined));
     },
     historico: (dono) => Promise.resolve(sucesso(mensagensDe(dono))),
+    guardarRascunho: (rascunho) => {
+      rascunhos.set(rascunho.id, rascunho);
+      return Promise.resolve(sucesso(undefined));
+    },
+    rascunhoPendente: (id, dono) => {
+      const rascunho = rascunhos.get(id);
+      if (rascunho?.dono !== dono) {
+        return Promise.resolve(falha({ motivo: "rascunho_nao_encontrado" }));
+      }
+      if (rascunho.status !== "pendente") {
+        return Promise.resolve(falha({ motivo: "rascunho_ja_resolvido", status: rascunho.status }));
+      }
+      return Promise.resolve(sucesso(rascunho));
+    },
+    resolverRascunho: (resolvido) => {
+      const atual = rascunhos.get(resolvido.id);
+      if (atual === undefined) throw new Error("rascunho resolvido sem ter sido guardado");
+      if (atual.status !== "pendente") {
+        return Promise.resolve(falha({ motivo: "rascunho_ja_resolvido", status: atual.status }));
+      }
+      rascunhos.set(resolvido.id, resolvido);
+      return Promise.resolve(sucesso(undefined));
+    },
   };
 }

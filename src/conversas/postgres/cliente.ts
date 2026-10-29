@@ -1,14 +1,16 @@
 import { and, asc, eq } from "drizzle-orm";
 import { novaConversa, type Conversa, type Controle } from "../../domain/conversa.js";
+import type { Rascunho } from "../../domain/rascunho.js";
 import { falha, sucesso } from "../../domain/resultado.js";
 import { protegerDaQuedaDoBanco } from "../../infraestrutura/falhas-do-postgres.js";
 import type { UserId } from "../../domain/user-id.js";
 import type { Banco } from "../../infraestrutura/banco.js";
-import type { Conversas, ErroDeControle, Mensagem } from "../conversas.js";
-import { conversas, mensagens } from "./esquema.js";
+import type { Conversas, ErroDeControle, Mensagem, RascunhoResolvido } from "../conversas.js";
+import { conversas, mensagens, rascunhos } from "./esquema.js";
 
 type LinhaDaConversa = typeof conversas.$inferSelect;
 type LinhaDaMensagem = typeof mensagens.$inferSelect;
+type LinhaDoRascunho = typeof rascunhos.$inferSelect;
 type ColunasDoControle = Omit<LinhaDaConversa, "dono">;
 
 const CONTROLE_MUDOU: ErroDeControle = { motivo: "controle_mudou" };
@@ -24,6 +26,12 @@ export function conversasPostgres(db: Banco): Conversas {
     registrarTurno: (dono, turno) =>
       protegerDaQuedaDoBanco(() => operacoes.registrarTurno(dono, turno)),
     historico: (dono) => protegerDaQuedaDoBanco(() => operacoes.historico(dono)),
+    guardarRascunho: (rascunho) =>
+      protegerDaQuedaDoBanco(() => operacoes.guardarRascunho(rascunho)),
+    rascunhoPendente: (id, dono) =>
+      protegerDaQuedaDoBanco(() => operacoes.rascunhoPendente(id, dono)),
+    resolverRascunho: (resolvido) =>
+      protegerDaQuedaDoBanco(() => operacoes.resolverRascunho(resolvido)),
   };
 }
 
@@ -79,7 +87,50 @@ function conversasSemProtecao(db: Banco): Conversas {
         .orderBy(asc(mensagens.id));
       return sucesso(linhas.map(paraMensagem));
     },
+    guardarRascunho: async ({ id, dono, conteudo, criadoEm }) => {
+      await db.insert(rascunhos).values({ id, dono, conteudo, status: "pendente", criadoEm });
+      return sucesso(undefined);
+    },
+    rascunhoPendente: async (id, dono) => {
+      const [linha] = await db
+        .select()
+        .from(rascunhos)
+        .where(and(eq(rascunhos.id, id), eq(rascunhos.dono, dono)));
+      if (linha === undefined) return falha({ motivo: "rascunho_nao_encontrado" });
+      if (linha.status !== "pendente") {
+        return falha({ motivo: "rascunho_ja_resolvido", status: linha.status });
+      }
+      return sucesso(paraRascunhoPendente(linha));
+    },
+    resolverRascunho: async (resolvido) => {
+      const alterados = await db
+        .update(rascunhos)
+        .set({ status: resolvido.status, resolvidoEm: resolvidoEm(resolvido) })
+        .where(and(eq(rascunhos.id, resolvido.id), eq(rascunhos.status, "pendente")))
+        .returning({ id: rascunhos.id });
+      if (alterados.length > 0) return sucesso(undefined);
+      const [atual] = await db
+        .select({ status: rascunhos.status })
+        .from(rascunhos)
+        .where(eq(rascunhos.id, resolvido.id));
+      const { status } = exigir(atual);
+      if (status === "pendente") throw new Error("rascunho pendente que não pôde ser resolvido");
+      return falha({ motivo: "rascunho_ja_resolvido", status });
+    },
   };
+}
+
+function paraRascunhoPendente({
+  id,
+  dono,
+  conteudo,
+  criadoEm,
+}: LinhaDoRascunho): Rascunho<"pendente"> {
+  return Object.freeze({ id, dono, conteudo, status: "pendente", criadoEm });
+}
+
+function resolvidoEm(resolvido: RascunhoResolvido): Date {
+  return resolvido.status === "confirmado" ? resolvido.confirmadoEm : resolvido.descartadoEm;
 }
 
 function linhaDaPergunta(dono: UserId, texto: string, enviadaEm: Date) {

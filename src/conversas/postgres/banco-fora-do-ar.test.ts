@@ -2,6 +2,9 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
 import { afterAll, describe, expect, it } from "vitest";
 import { novaConversa } from "../../domain/conversa.js";
+import { descartar } from "../../domain/rascunho.js";
+import { NOVO_NOTEBOOK_LENTO, rascunhoPendente } from "../../testes/rascunhos.js";
+import { valorDe } from "../../testes/valor-de.js";
 import { ana } from "../../testes/usuarios.js";
 import type { Conversas } from "../conversas.js";
 import { conversasPostgres } from "./cliente.js";
@@ -15,6 +18,8 @@ afterAll(() => inalcancavel.end());
 
 const agora = new Date("2026-10-28T13:00:00Z");
 
+const rascunho = rascunhoPendente(NOVO_NOTEBOOK_LENTO, agora);
+
 function chamadas(conversas: Conversas) {
   return {
     atual: () => conversas.atual(ana),
@@ -27,6 +32,10 @@ function chamadas(conversas: Conversas) {
         agora,
       }),
     historico: () => conversas.historico(ana),
+    guardarRascunho: () => conversas.guardarRascunho(rascunho),
+    rascunhoPendente: () => conversas.rascunhoPendente(rascunho.id, ana),
+    resolverRascunho: () =>
+      conversas.resolverRascunho(valorDe(descartar(rascunho, { por: ana, agora }))),
   } satisfies Record<keyof Conversas, () => Promise<unknown>>;
 }
 

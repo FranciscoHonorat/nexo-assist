@@ -3,7 +3,7 @@ import { drizzle, type PgliteDatabase } from "drizzle-orm/pglite";
 import { migrate } from "drizzle-orm/pglite/migrator";
 import { getTableName } from "drizzle-orm";
 import { conversasPostgres } from "../conversas/postgres/cliente.js";
-import { conversas, mensagens } from "../conversas/postgres/esquema.js";
+import { conversas, mensagens, rascunhos } from "../conversas/postgres/esquema.js";
 import type { Conversas } from "../conversas/conversas.js";
 import type { EstadoInicial, TicketClient } from "../tickets/ticket-client.js";
 import { prepararBanco } from "./preparar-banco.js";
@@ -36,7 +36,7 @@ export async function bancoDeTeste(inicial: EstadoInicial): Promise<TicketClient
 export async function conversasDeTeste(): Promise<Conversas> {
   const { pglite, db } = await (migrado ??= criarEMigrar());
   await pglite.exec(
-    `TRUNCATE ${[mensagens, conversas].map(getTableName).join(", ")} RESTART IDENTITY;`,
+    `TRUNCATE ${[rascunhos, mensagens, conversas].map(getTableName).join(", ")} RESTART IDENTITY;`,
   );
   return conversasPostgres(db);
 }

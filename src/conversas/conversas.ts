@@ -1,4 +1,6 @@
 import type { Conversa, Controle } from "../domain/conversa.js";
+import type { RascunhoId } from "../domain/rascunho-id.js";
+import type { Rascunho, StatusRascunho } from "../domain/rascunho.js";
 import type { Resultado } from "../domain/resultado.js";
 import type { UserId } from "../domain/user-id.js";
 import type { ErroDeInfraestrutura } from "../infraestrutura/indisponivel.js";
@@ -26,6 +28,15 @@ export type Turno = {
 
 export type ErroDeControle = { readonly motivo: "controle_mudou" };
 
+export type ErroDeRascunho =
+  | { readonly motivo: "rascunho_nao_encontrado" }
+  | {
+      readonly motivo: "rascunho_ja_resolvido";
+      readonly status: Exclude<StatusRascunho, "pendente">;
+    };
+
+export type RascunhoResolvido = Rascunho<"confirmado"> | Rascunho<"descartado">;
+
 type Resposta<T, E = never> = Promise<Resultado<T, E | ErroDeInfraestrutura>>;
 
 export type Conversas = {
@@ -40,4 +51,12 @@ export type Conversas = {
   ) => Resposta<undefined>;
   readonly registrarTurno: (dono: UserId, turno: Turno) => Resposta<undefined, ErroDeControle>;
   readonly historico: (dono: UserId) => Resposta<readonly Mensagem[]>;
+  readonly guardarRascunho: (rascunho: Rascunho<"pendente">) => Resposta<undefined>;
+  readonly rascunhoPendente: (
+    id: RascunhoId,
+    dono: UserId,
+  ) => Resposta<Rascunho<"pendente">, ErroDeRascunho>;
+  readonly resolverRascunho: (
+    resolvido: RascunhoResolvido,
+  ) => Resposta<undefined, Extract<ErroDeRascunho, { motivo: "rascunho_ja_resolvido" }>>;
 };

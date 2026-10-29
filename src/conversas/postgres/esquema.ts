@@ -1,6 +1,8 @@
 import { sql } from "drizzle-orm";
 import { check, index, jsonb, pgEnum, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
-import type { Controle, MotivoDeTransferencia } from "../../domain/conversa.js";
+import { MOTIVOS_DE_TRANSFERENCIA, type Controle } from "../../domain/conversa.js";
+import type { RascunhoId } from "../../domain/rascunho-id.js";
+import type { ConteudoDoRascunho, StatusRascunho } from "../../domain/rascunho.js";
 import type { UserId } from "../../domain/user-id.js";
 import type { Json } from "../../infraestrutura/json.js";
 import type { Mensagem } from "../conversas.js";
@@ -11,12 +13,7 @@ export const controleDaConversa = pgEnum("controle_da_conversa", [
   "analista",
 ] as const satisfies readonly Controle[]);
 
-export const motivoDeTransferencia = pgEnum("motivo_de_transferencia", [
-  "pedido_do_funcionario",
-  "caso_critico",
-  "chamado_vencido",
-  "baixa_confianca",
-] as const satisfies readonly MotivoDeTransferencia[]);
+export const motivoDeTransferencia = pgEnum("motivo_de_transferencia", MOTIVOS_DE_TRANSFERENCIA);
 
 const instante = (nome: string) => timestamp(nome, { withTimezone: true, mode: "date" });
 
@@ -69,6 +66,33 @@ export const mensagens = pgTable(
     check(
       "so_o_agent_tem_registro",
       sql`(${tabela.autor} = 'agent') = (${tabela.registro} IS NOT NULL)`,
+    ),
+  ],
+);
+
+export const statusDoRascunho = pgEnum("status_do_rascunho", [
+  "pendente",
+  "confirmado",
+  "descartado",
+] as const satisfies readonly StatusRascunho[]);
+
+export const rascunhos = pgTable(
+  "rascunhos",
+  {
+    id: text("id").$type<RascunhoId>().primaryKey(),
+    dono: text("dono")
+      .$type<UserId>()
+      .notNull()
+      .references(() => conversas.dono),
+    conteudo: jsonb("conteudo").$type<ConteudoDoRascunho>().notNull(),
+    status: statusDoRascunho("status").notNull(),
+    criadoEm: instante("criado_em").notNull(),
+    resolvidoEm: instante("resolvido_em"),
+  },
+  (tabela) => [
+    check(
+      "resolvido_so_fora_do_pendente",
+      sql`(${tabela.status} = 'pendente') = (${tabela.resolvidoEm} IS NULL)`,
     ),
   ],
 );

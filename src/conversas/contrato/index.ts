@@ -1,6 +1,7 @@
 import { describe } from "vitest";
 import type { Conversas } from "../conversas.js";
 import { cenariosDaConversaAtual } from "./atual.js";
+import { cenariosDosRascunhos } from "./rascunhos.js";
 import { cenariosDasTransicoes } from "./transicoes.js";
 import { cenariosDosTurnos } from "./turnos.js";
 
@@ -14,5 +15,6 @@ export function verificarContratoDeConversas(
     cenariosDaConversaAtual(fabricar);
     cenariosDosTurnos(fabricar);
     cenariosDasTransicoes(fabricar);
+    cenariosDosRascunhos(fabricar);
   });
 }
