@@ -1,0 +1,401 @@
+{
+  "id": "b4d2c18b-949e-4e27-8c45-339b04b02fe2",
+  "prevId": "f1209f59-f31f-4ccb-800f-208c6bb51922",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.chamados": {
+      "name": "chamados",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "dono": {
+          "name": "dono",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "titulo": {
+          "name": "titulo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "descricao": {
+          "name": "descricao",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tipo": {
+          "name": "tipo",
+          "type": "tipo_do_chamado",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "categoria": {
+          "name": "categoria",
+          "type": "categoria",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "prioridade": {
+          "name": "prioridade",
+          "type": "prioridade",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "afetados": {
+          "name": "afetados",
+          "type": "afetados",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "status_do_chamado",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "criado_em": {
+          "name": "criado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "atualizado_em": {
+          "name": "atualizado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "rascunho_id": {
+          "name": "rascunho_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "chamados_rascunho_id_unique": {
+          "name": "chamados_rascunho_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "rascunho_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "id_no_formato": {
+          "name": "id_no_formato",
+          "value": "\"chamados\".\"id\" ~ '^(INC|REQ)-[0-9]{1,9}$'"
+        },
+        "dono_corporativo": {
+          "name": "dono_corporativo",
+          "value": "\"chamados\".\"dono\" ~ '^[a-z0-9._%+-]+@nexo\\.com$'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.complementos": {
+      "name": "complementos",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "chamado_id": {
+          "name": "chamado_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "texto": {
+          "name": "texto",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "em": {
+          "name": "em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "rascunho_id": {
+          "name": "rascunho_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "complementos_chamado_id_chamados_id_fk": {
+          "name": "complementos_chamado_id_chamados_id_fk",
+          "tableFrom": "complementos",
+          "tableTo": "chamados",
+          "columnsFrom": [
+            "chamado_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "complementos_rascunho_id_unique": {
+          "name": "complementos_rascunho_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "rascunho_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.conversas": {
+      "name": "conversas",
+      "schema": "",
+      "columns": {
+        "dono": {
+          "name": "dono",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "controle": {
+          "name": "controle",
+          "type": "controle_da_conversa",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "dono_da_conversa_corporativo": {
+          "name": "dono_da_conversa_corporativo",
+          "value": "\"conversas\".\"dono\" ~ '^[a-z0-9._%+-]+@nexo\\.com$'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.mensagens": {
+      "name": "mensagens",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "dono": {
+          "name": "dono",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "autor": {
+          "name": "autor",
+          "type": "autor_da_mensagem",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "texto": {
+          "name": "texto",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "enviada_em": {
+          "name": "enviada_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "registro": {
+          "name": "registro",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "mensagens_por_dono": {
+          "name": "mensagens_por_dono",
+          "columns": [
+            {
+              "expression": "dono",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "mensagens_dono_conversas_dono_fk": {
+          "name": "mensagens_dono_conversas_dono_fk",
+          "tableFrom": "mensagens",
+          "tableTo": "conversas",
+          "columnsFrom": [
+            "dono"
+          ],
+          "columnsTo": [
+            "dono"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "so_o_agent_tem_registro": {
+          "name": "so_o_agent_tem_registro",
+          "value": "(\"mensagens\".\"autor\" = 'agent') = (\"mensagens\".\"registro\" IS NOT NULL)"
+        }
+      },
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.afetados": {
+      "name": "afetados",
+      "schema": "public",
+      "values": [
+        "so_eu",
+        "minha_equipe",
+        "empresa"
+      ]
+    },
+    "public.categoria": {
+      "name": "categoria",
+      "schema": "public",
+      "values": [
+        "acesso",
+        "rede_e_vpn",
+        "hardware",
+        "software",
+        "email",
+        "outros"
+      ]
+    },
+    "public.prioridade": {
+      "name": "prioridade",
+      "schema": "public",
+      "values": [
+        "critica",
+        "alta",
+        "media",
+        "baixa"
+      ]
+    },
+    "public.status_do_chamado": {
+      "name": "status_do_chamado",
+      "schema": "public",
+      "values": [
+        "aberto",
+        "aguardando_analista",
+        "aprovado",
+        "resolvido"
+      ]
+    },
+    "public.tipo_do_chamado": {
+      "name": "tipo_do_chamado",
+      "schema": "public",
+      "values": [
+        "incidente",
+        "requisicao"
+      ]
+    },
+    "public.autor_da_mensagem": {
+      "name": "autor_da_mensagem",
+      "schema": "public",
+      "values": [
+        "funcionario",
+        "agent"
+      ]
+    },
+    "public.controle_da_conversa": {
+      "name": "controle_da_conversa",
+      "schema": "public",
+      "values": [
+        "agent",
+        "aguardando",
+        "analista"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {
+    "public.numero_de_incidente": {
+      "name": "numero_de_incidente",
+      "schema": "public",
+      "increment": "1",
+      "startWith": "30000",
+      "minValue": "1",
+      "maxValue": "999999999",
+      "cache": "1",
+      "cycle": false
+    },
+    "public.numero_de_requisicao": {
+      "name": "numero_de_requisicao",
+      "schema": "public",
+      "increment": "1",
+      "startWith": "30000",
+      "minValue": "1",
+      "maxValue": "999999999",
+      "cache": "1",
+      "cycle": false
+    }
+  },
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
