@@ -250,4 +250,23 @@ describe("Legado fora do ar durante uma tool: o turno segue e o modelo fica sabe
       passoDeTool("consultar_chamados", "indisponivel", "serviço de chamados indisponível"),
     );
   });
+
+  it("Dado o serviço de chamados fora do ar, Quando o modelo pede um chamado pelo id, Então recebe indisponível e ainda responde", async () => {
+    const { turno, chamados } = await cenarioDaAna("e o INC-20311?", [incidenteDaAna], {
+      foraDoAr: true,
+    });
+    const modelo = agentStepRoteirizado([
+      chamaTools({ tool: "obter_chamado", argumentos: { id: "INC-20311" } }),
+      responde("O sistema de chamados está fora do ar agora. Quer que eu chame um analista?"),
+    ]);
+
+    const resposta = await executarTurno(turno, modelo, chamados);
+
+    expect(vistoDepoisDasTools(modelo)).toEqual([
+      { tool: "obter_chamado", resposta: { ok: false, erro: { motivo: "indisponivel" } } },
+    ]);
+    expect(resposta.trace).toContainEqual(
+      passoDeTool("obter_chamado", "indisponivel", "serviço de chamados indisponível"),
+    );
+  });
 });

@@ -1,7 +1,6 @@
-import { falha } from "../domain/resultado.js";
 import { lerTicketId } from "../domain/ticket-id.js";
 import type { UserId } from "../domain/user-id.js";
-import { ehIndisponivel, type TicketClient } from "../tickets/ticket-client.js";
+import type { TicketClient } from "../tickets/ticket-client.js";
 import type { ChamadaDeTool, ResultadoDeTool } from "./agent-step.js";
 
 export type PassoDaTool = {
@@ -66,12 +65,7 @@ async function buscarPorId(
 ): Promise<RespostaDa<"obter_chamado">> {
   const lido = lerTicketId(id);
   if (!lido.ok) return lido;
-  const consulta = await chamados.obter(lido.valor, usuario);
-  if (consulta.ok) return consulta;
-  if (ehIndisponivel(consulta.erro)) {
-    throw new Error("legado fora do ar durante uma tool: ainda sem tratamento");
-  }
-  return falha(consulta.erro);
+  return chamados.obter(lido.valor, usuario);
 }
 
 function descreverBusca(resposta: RespostaDa<"obter_chamado">): ToolExecutada["trace"] {
@@ -84,6 +78,8 @@ function descreverBusca(resposta: RespostaDa<"obter_chamado">): ToolExecutada["t
       };
     case "nao_encontrado":
       return { resultado: "executou", detalhe: `${resposta.erro.id} não encontrado` };
+    case "indisponivel":
+      return SERVICO_INDISPONIVEL;
   }
 }
 

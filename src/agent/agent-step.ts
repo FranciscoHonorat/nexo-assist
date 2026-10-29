@@ -22,7 +22,7 @@ export type ResultadoDeTool =
     }
   | {
       readonly tool: "obter_chamado";
-      readonly resposta: Resultado<Chamado, ErroTicketId | ErroDeConsulta>;
+      readonly resposta: Resultado<Chamado, ErroTicketId | ErroDeConsulta | ErroDeInfraestrutura>;
     };
 
 export type DecisaoFinal =
