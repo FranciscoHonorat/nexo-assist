@@ -1,7 +1,7 @@
 import { lerTicketId } from "../domain/ticket-id.js";
 import type { UserId } from "../domain/user-id.js";
 import type { TicketClient } from "../tickets/ticket-client.js";
-import type { ChamadaDeTool, ResultadoDeTool } from "./agent-step.js";
+import type { ChamadaDeTool, RespostaDa, ResultadoDeTool } from "./agent-step.js";
 
 export type PassoDaTool = {
   readonly etapa: "tool";
@@ -9,11 +9,6 @@ export type PassoDaTool = {
   readonly resultado: "executou" | "argumentos_invalidos" | "indisponivel";
   readonly detalhe: string;
 };
-
-type RespostaDa<Tool extends ResultadoDeTool["tool"]> = Extract<
-  ResultadoDeTool,
-  { readonly tool: Tool }
->["resposta"];
 
 const SERVICO_INDISPONIVEL = {
   resultado: "indisponivel",

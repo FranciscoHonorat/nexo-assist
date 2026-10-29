@@ -15,15 +15,21 @@ export type ChamadaDeTool =
   | { readonly tool: "consultar_chamados" }
   | { readonly tool: "obter_chamado"; readonly argumentos: { readonly id: string } };
 
-export type ResultadoDeTool =
-  | {
-      readonly tool: "consultar_chamados";
-      readonly resposta: Resultado<readonly Chamado[], ErroDeInfraestrutura>;
-    }
-  | {
-      readonly tool: "obter_chamado";
-      readonly resposta: Resultado<Chamado, ErroTicketId | ErroDeConsulta | ErroDeInfraestrutura>;
-    };
+type RespostaDoServico<T, E = never> = Resultado<T, E | ErroDeInfraestrutura>;
+
+type RespostasPorTool = {
+  consultar_chamados: RespostaDoServico<readonly Chamado[]>;
+  obter_chamado: RespostaDoServico<Chamado, ErroTicketId | ErroDeConsulta>;
+};
+
+export type RespostaDa<Tool extends keyof RespostasPorTool> = RespostasPorTool[Tool];
+
+export type ResultadoDeTool = {
+  [Tool in keyof RespostasPorTool]: {
+    readonly tool: Tool;
+    readonly resposta: RespostaDa<Tool>;
+  };
+}[keyof RespostasPorTool];
 
 export type DecisaoFinal =
   | {
