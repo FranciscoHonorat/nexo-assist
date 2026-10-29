@@ -1,13 +1,7 @@
-import type { Chamado } from "../domain/chamado.js";
-import { falha, type Resultado } from "../domain/resultado.js";
-import { lerTicketId, type ErroTicketId } from "../domain/ticket-id.js";
+import { falha } from "../domain/resultado.js";
+import { lerTicketId } from "../domain/ticket-id.js";
 import type { UserId } from "../domain/user-id.js";
-import {
-  ehIndisponivel,
-  type ErroDeConsulta,
-  type ErroDeInfraestrutura,
-  type TicketClient,
-} from "../tickets/ticket-client.js";
+import { ehIndisponivel, type TicketClient } from "../tickets/ticket-client.js";
 import type { ChamadaDeTool, ResultadoDeTool } from "./agent-step.js";
 
 export type PassoDaTool = {
@@ -16,6 +10,11 @@ export type PassoDaTool = {
   readonly resultado: "executou" | "argumentos_invalidos" | "indisponivel";
   readonly detalhe: string;
 };
+
+type RespostaDa<Tool extends ResultadoDeTool["tool"]> = Extract<
+  ResultadoDeTool,
+  { readonly tool: Tool }
+>["resposta"];
 
 const SERVICO_INDISPONIVEL = {
   resultado: "indisponivel",
@@ -45,15 +44,11 @@ async function consultarChamados(usuario: UserId, chamados: TicketClient): Promi
   return { resultado: { tool: "consultar_chamados", resposta }, trace: descreverLista(resposta) };
 }
 
-function descreverLista(
-  resposta: Resultado<readonly Chamado[], ErroDeInfraestrutura>,
-): ToolExecutada["trace"] {
+function descreverLista(resposta: RespostaDa<"consultar_chamados">): ToolExecutada["trace"] {
   if (!resposta.ok) return SERVICO_INDISPONIVEL;
   const ids = resposta.valor.map((chamado) => chamado.id).join(", ");
   return { resultado: "executou", detalhe: `${String(resposta.valor.length)} chamados: ${ids}` };
 }
-
-type RespostaDaBusca = Resultado<Chamado, ErroTicketId | ErroDeConsulta>;
 
 async function obterChamado(
   id: string,
@@ -68,7 +63,7 @@ async function buscarPorId(
   id: string,
   usuario: UserId,
   chamados: TicketClient,
-): Promise<RespostaDaBusca> {
+): Promise<RespostaDa<"obter_chamado">> {
   const lido = lerTicketId(id);
   if (!lido.ok) return lido;
   const consulta = await chamados.obter(lido.valor, usuario);
@@ -79,7 +74,7 @@ async function buscarPorId(
   return falha(consulta.erro);
 }
 
-function descreverBusca(resposta: RespostaDaBusca): ToolExecutada["trace"] {
+function descreverBusca(resposta: RespostaDa<"obter_chamado">): ToolExecutada["trace"] {
   if (resposta.ok) return { resultado: "executou", detalhe: `${resposta.valor.id} encontrado` };
   switch (resposta.erro.motivo) {
     case "formato_invalido":
