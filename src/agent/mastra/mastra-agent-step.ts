@@ -11,7 +11,9 @@ import type {
   ResultadoDeTool,
 } from "../agent-step.js";
 
-export type Esforco = "low" | "medium" | "high";
+export const ESFORCOS = ["low", "medium", "high"] as const;
+
+export type Esforco = (typeof ESFORCOS)[number];
 
 export type ConfiguracaoDoMastra = {
   readonly modelo: AgentConfig["model"];
