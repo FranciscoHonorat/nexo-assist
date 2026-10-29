@@ -42,47 +42,68 @@ const MODELO_NAO_DECLAROU: PassoDaResposta = {
   detalhe: "o modelo respondeu com texto solto, fora da tool responder",
 };
 
+type Execucao = {
+  readonly turno: TurnoPronto;
+  readonly modelo: AgentStep;
+  readonly chamados: TicketClient;
+};
+
+type Andamento = {
+  readonly resultadosDeTools: readonly ResultadoDeTool[];
+  readonly trace: readonly PassoDoTurno[];
+};
+
+type ToolExecutada = {
+  readonly resultado: ResultadoDeTool;
+  readonly passo: PassoDaTool;
+};
+
 export function executarTurno(
   turno: TurnoPronto,
   modelo: AgentStep,
   chamados: TicketClient,
 ): Promise<RespostaDoTurno> {
-  return decidirAteResponder(turno, modelo, chamados, [], turno.trace);
+  return decidirAteResponder(
+    { turno, modelo, chamados },
+    { resultadosDeTools: [], trace: turno.trace },
+  );
 }
 
 async function decidirAteResponder(
-  turno: TurnoPronto,
-  modelo: AgentStep,
-  chamados: TicketClient,
-  resultadosDeTools: readonly ResultadoDeTool[],
-  trace: readonly PassoDoTurno[],
+  execucao: Execucao,
+  andamento: Andamento,
 ): Promise<RespostaDoTurno> {
+  const { turno, modelo, chamados } = execucao;
   const decisao = await modelo.decidir({
     mensagem: turno.mensagem,
     chamadosVencidos: turno.chamadosVencidos,
-    resultadosDeTools,
+    resultadosDeTools: andamento.resultadosDeTools,
   });
   if (decisao.tipo !== "tools") {
     const { passos, ...resposta } = traduzirDecisao(decisao);
-    return { ...resposta, trace: [...trace, ...passos] };
+    return { ...resposta, trace: [...andamento.trace, ...passos] };
   }
   const executadas = await Promise.all(
     decisao.chamadas.map((chamada) => executarTool(chamada, turno.usuario, chamados)),
   );
-  return decidirAteResponder(
-    turno,
-    modelo,
-    chamados,
-    [...resultadosDeTools, ...executadas.map((executada) => executada.resultado)],
-    [...trace, ...executadas.map((executada) => executada.passo)],
-  );
+  return decidirAteResponder(execucao, registrar(andamento, executadas));
+}
+
+function registrar(andamento: Andamento, executadas: readonly ToolExecutada[]): Andamento {
+  return {
+    resultadosDeTools: [
+      ...andamento.resultadosDeTools,
+      ...executadas.map((executada) => executada.resultado),
+    ],
+    trace: [...andamento.trace, ...executadas.map((executada) => executada.passo)],
+  };
 }
 
 async function executarTool(
   chamada: ChamadaDeTool,
   usuario: UserId,
   chamados: TicketClient,
-): Promise<{ readonly resultado: ResultadoDeTool; readonly passo: PassoDaTool }> {
+): Promise<ToolExecutada> {
   const doUsuario = await chamados.listar(usuario);
   if (!doUsuario.ok) throw new Error("legado fora do ar durante uma tool: ainda sem tratamento");
   const ids = doUsuario.valor.map((chamado) => chamado.id).join(", ");
