@@ -20,7 +20,12 @@ import {
 } from "../tickets/contrato/fixtures.js";
 import { ticketClientEmMemoria, type Operacao } from "../tickets/em-memoria.js";
 import type { Chamado } from "../domain/chamado.js";
-import { prepararTurno, RESPOSTA_DO_LIMITE } from "./guardas.js";
+import {
+  prepararTurno,
+  RESPOSTA_DO_LIMITE,
+  type NomeDaGuarda,
+  type PassoDaGuarda,
+} from "./guardas.js";
 
 const bruno = valorDe(lerUserId("bruno.n1@nexo.com"));
 
@@ -49,6 +54,18 @@ const naFila = valorDe(
 );
 const comAnalista = assumir(naFila, { analista: bruno, agora: t1 });
 
+function passou(nome: NomeDaGuarda, detalhe: string): PassoDaGuarda {
+  return { etapa: "guarda", nome, resultado: "passou", detalhe };
+}
+
+function interrompeu(nome: NomeDaGuarda, detalhe: string): PassoDaGuarda {
+  return { etapa: "guarda", nome, resultado: "interrompeu", detalhe };
+}
+
+function naoVerificou(nome: NomeDaGuarda, detalhe: string): PassoDaGuarda {
+  return { etapa: "guarda", nome, resultado: "nao_verificou", detalhe };
+}
+
 function entrada(conversa: Conversa<Controle>, mensagensNaSessao = 3) {
   return {
     usuario: ana,
@@ -67,14 +84,7 @@ describe("Guarda de controle: o agent só fala quando a conversa é dele", () =>
       ok: false,
       erro: {
         motivo: "conversa_na_fila",
-        trace: [
-          {
-            etapa: "guarda",
-            nome: "controle",
-            resultado: "interrompeu",
-            detalhe: "conversa aguardando um analista",
-          },
-        ],
+        trace: [interrompeu("controle", "conversa aguardando um analista")],
       },
     });
     expect(consultas).toEqual([]);
@@ -87,14 +97,7 @@ describe("Guarda de controle: o agent só fala quando a conversa é dele", () =>
       ok: false,
       erro: {
         motivo: "conversa_com_analista",
-        trace: [
-          {
-            etapa: "guarda",
-            nome: "controle",
-            resultado: "interrompeu",
-            detalhe: "conversa com bruno.n1@nexo.com",
-          },
-        ],
+        trace: [interrompeu("controle", "conversa com bruno.n1@nexo.com")],
       },
     });
     expect(consultas).toEqual([]);
@@ -107,12 +110,7 @@ describe("Guarda de limite: no máximo 30 mensagens por sessão", () => {
 
     const turno = valorDe(await prepararTurno(entrada(comAgent, 29), cliente));
 
-    expect(turno.trace).toContainEqual({
-      etapa: "guarda",
-      nome: "limite",
-      resultado: "passou",
-      detalhe: "30 de 30 mensagens",
-    });
+    expect(turno.trace).toContainEqual(passou("limite", "30 de 30 mensagens"));
   });
 
   it("Dado 30 mensagens anteriores, Quando chega a 31ª, Então a resposta é fixa, sem LLM e sem consultar chamados", async () => {
@@ -124,18 +122,8 @@ describe("Guarda de limite: no máximo 30 mensagens por sessão", () => {
         motivo: "limite_da_sessao",
         resposta: RESPOSTA_DO_LIMITE,
         trace: [
-          {
-            etapa: "guarda",
-            nome: "controle",
-            resultado: "passou",
-            detalhe: "conversa com o agent",
-          },
-          {
-            etapa: "guarda",
-            nome: "limite",
-            resultado: "interrompeu",
-            detalhe: "31 de 30 mensagens",
-          },
+          passou("controle", "conversa com o agent"),
+          interrompeu("limite", "31 de 30 mensagens"),
         ],
       },
     });
@@ -150,12 +138,7 @@ describe("Guarda de vencidos: o agent já sabe o que está atrasado", () => {
     const turno = valorDe(await prepararTurno(entrada(comAgent), cliente));
 
     expect(turno.chamadosVencidos.map((chamado) => chamado.id)).toEqual([incidenteDaAna.id]);
-    expect(turno.trace).toContainEqual({
-      etapa: "guarda",
-      nome: "vencidos",
-      resultado: "passou",
-      detalhe: "INC-20311 vencido",
-    });
+    expect(turno.trace).toContainEqual(passou("vencidos", "INC-20311 vencido"));
   });
 
   it("Dado que nada está atrasado, Então o trace diz isso", async () => {
@@ -164,12 +147,7 @@ describe("Guarda de vencidos: o agent já sabe o que está atrasado", () => {
     const turno = valorDe(await prepararTurno(entrada(comAgent), cliente));
 
     expect(turno.chamadosVencidos).toEqual([]);
-    expect(turno.trace).toContainEqual({
-      etapa: "guarda",
-      nome: "vencidos",
-      resultado: "passou",
-      detalhe: "nenhum chamado vencido",
-    });
+    expect(turno.trace).toContainEqual(passou("vencidos", "nenhum chamado vencido"));
   });
 
   it("Dado que o legado está fora do ar, Então o turno segue e o trace registra que não foi possível verificar", async () => {
@@ -178,12 +156,9 @@ describe("Guarda de vencidos: o agent já sabe o que está atrasado", () => {
     const turno = valorDe(await prepararTurno(entrada(comAgent), cliente));
 
     expect(turno.chamadosVencidos).toEqual([]);
-    expect(turno.trace).toContainEqual({
-      etapa: "guarda",
-      nome: "vencidos",
-      resultado: "nao_verificou",
-      detalhe: "serviço de chamados indisponível",
-    });
+    expect(turno.trace).toContainEqual(
+      naoVerificou("vencidos", "serviço de chamados indisponível"),
+    );
   });
 });
 
